@@ -99,12 +99,12 @@ spectra-core/
 │   │   ├── SpectraExchange.sol # Custom router abstractions for exchange logic
 │   │   └── SpectraNFT.sol      # Gated NFT minting logic for Vector/Nexus subscribers
 │   └── hardhat.config.js       # JS-based compiler configuration
-└── /frontend                   # Bun + Vite Client Application
-    ├── package.json            # Fast package dependency mapping via Bun
-    └── src/
-        ├── agent/              # AI Core (Axios setup, prompt parsers, EIP-712 engines)
-        ├── components/         # Pure UI elements (Poppins configuration, monochromatic styles)
-        └── context/            # UGF State Provider mapping
+| # Bun + Vite Client Application
+├── package.json            # Fast package dependency mapping via Bun
+└── src/
+    ├── agent/              # AI Core (Axios setup, prompt parsers, EIP-712 engines)
+    ├── components/         # Pure UI elements (Poppins configuration, monochromatic styles)
+    └── context/            # UGF State Provider mapping
 
 ```
 
