@@ -2,6 +2,13 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { ethers } from 'ethers';
 import { CONTRACT_ABIS, CONTRACT_ADDRESSES, TOKEN_ADDRESSES } from '../../config/contracts.js';
 
+const ERC20_ABI = [
+  'function balanceOf(address owner) view returns (uint256)',
+  'function approve(address spender, uint256 value) returns (bool)',
+  'function allowance(address owner, address spender) view returns (uint256)',
+  'function decimals() view returns (uint8)',
+];
+
 export const ASSET_OPTIONS = [
   { id: 'TYI', label: 'Mock USD (TYI)', tokenAddress: TOKEN_ADDRESSES.MUSD, symbol: 'USDTUSD' },
   { id: 'ETH', label: 'Ethereum (ETH)', tokenAddress: TOKEN_ADDRESSES.WETH, symbol: 'ETHUSDT' },
@@ -32,7 +39,7 @@ export default function SwapBox({
   const fetchBalances = async (provider, address) => {
     const [ethRaw, mockUsdContract] = await Promise.all([
       provider.getBalance(address),
-      Promise.resolve(new ethers.Contract(TOKEN_ADDRESSES.MUSD, CONTRACT_ABIS.MOCK_USD, provider)),
+      Promise.resolve(new ethers.Contract(TOKEN_ADDRESSES.MUSD, ERC20_ABI, provider)),
     ]);
 
     const decimals = await mockUsdContract.decimals();
@@ -98,7 +105,7 @@ export default function SwapBox({
   }, [onError]);
 
   const ensureAllowance = async (signer, spender, amountWei) => {
-    const token = new ethers.Contract(TOKEN_ADDRESSES.MUSD, CONTRACT_ABIS.MOCK_USD, signer);
+    const token = new ethers.Contract(TOKEN_ADDRESSES.MUSD, ERC20_ABI, signer);
     const owner = await signer.getAddress();
     const currentAllowance = await token.allowance(owner, spender);
 
@@ -107,7 +114,7 @@ export default function SwapBox({
     }
 
     setApprovalState('Approving Mock USD spending...');
-    const approveTx = await token.approve(spender, amountWei);
+    const approveTx = await token.approve(spender, ethers.MaxUint256);
     await approveTx.wait();
     setApprovalState('Approval confirmed.');
   };
@@ -151,6 +158,7 @@ export default function SwapBox({
         ? 'Transaction rejected by user.'
         : (swapError?.shortMessage || swapError?.message || 'Swap execution failed.');
       onError?.(message);
+      onTxHashChange?.('');
     } finally {
       setIsExecuting(false);
       setApprovalState('');

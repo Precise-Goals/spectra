@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import styled, { keyframes } from 'styled-components';
 import { Link, useNavigate } from 'react-router-dom';
-
+import '../../styles/final.css'
 /* ─── Styled ─────────────────────────────────────────────────────────────────── */
 
 const Page = styled.div`
@@ -79,7 +79,7 @@ const HeroCard = styled.div`
   flex-direction: column;
   align-items: center;
   gap: 32px;
-  background: rgba(var(--bg-rgb, 255,255,255), 0.8);
+  background : rgba(4, 0, 255, 0.97);
   padding: 32px;
   border: 1px solid rgba(0,0,0,0.1);
   backdrop-filter: blur(4px);
@@ -309,16 +309,16 @@ const CheckItem = styled.li`
 
 const DiagramBox = styled.div`
   border: 1px solid var(--border-color);
-  background: var(--bg);
+  background: blue;
   padding: 32px;
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 300px;
 
-  svg rect, svg circle { fill: var(--bg); stroke: var(--border-color); }
-  svg text { fill: var(--color-primary); }
-  svg path, svg line { stroke: var(--border-color); }
+  svg rect, svg circle { fill: white; stroke: var(--border-color); }
+  svg text { fill: blue; font-size:16px; }
+  svg path, svg line { stroke: white; }
 `;
 
 /* ── Features (Core Modules) ── */
@@ -595,7 +595,7 @@ export default function CinematicHero() {
               <rect x="310" y="35" width="60" height="30" />
               <text fontFamily="monospace" fontSize="10" x="325" y="55">ETH</text>
               <rect x="310" y="85" width="60" height="30" />
-              <text fontFamily="monospace" fontSize="10" x="325" y="105">ARB</text>
+              <text fontFamily="monospace" fontSize="10" x="325" y="105">TYI</text>
               <rect x="310" y="135" width="60" height="30" />
               <text fontFamily="monospace" fontSize="10" x="325" y="155">OP</text>
             </svg>

@@ -2,6 +2,13 @@ import React, { useMemo, useState } from 'react';
 import { ethers } from 'ethers';
 import { CONTRACT_ABIS, CONTRACT_ADDRESSES, TOKEN_ADDRESSES } from '../../config/contracts.js';
 
+const ERC20_ABI = [
+  'function balanceOf(address owner) view returns (uint256)',
+  'function approve(address spender, uint256 value) returns (bool)',
+  'function allowance(address owner, address spender) view returns (uint256)',
+  'function decimals() view returns (uint8)',
+];
+
 const TIERS = [
   {
     id: 'alpha',
@@ -51,7 +58,7 @@ export default function MintConsole() {
   const fetchBalances = async (provider, address) => {
     const [ethRaw, mockUsdContract] = await Promise.all([
       provider.getBalance(address),
-      Promise.resolve(new ethers.Contract(TOKEN_ADDRESSES.MUSD, CONTRACT_ABIS.MOCK_USD, provider)),
+      Promise.resolve(new ethers.Contract(TOKEN_ADDRESSES.MUSD, ERC20_ABI, provider)),
     ]);
 
     const decimals = await mockUsdContract.decimals();
@@ -77,7 +84,7 @@ export default function MintConsole() {
   };
 
   const approveIfNeeded = async (signer, spender, amountWei) => {
-    const token = new ethers.Contract(TOKEN_ADDRESSES.MUSD, CONTRACT_ABIS.MOCK_USD, signer);
+    const token = new ethers.Contract(TOKEN_ADDRESSES.MUSD, ERC20_ABI, signer);
     const owner = await signer.getAddress();
     const allowance = await token.allowance(owner, spender);
 
@@ -86,7 +93,7 @@ export default function MintConsole() {
     }
 
     setStatus('APPROVING');
-    const approveTx = await token.approve(spender, amountWei);
+    const approveTx = await token.approve(spender, ethers.MaxUint256);
     await approveTx.wait();
   };
 
@@ -132,6 +139,7 @@ export default function MintConsole() {
         setFeedback(mintError?.shortMessage || mintError?.message || 'Mint request failed.');
       }
       setStatus('ERROR');
+      setTxHash('');
     } finally {
       setIsMinting(false);
     }

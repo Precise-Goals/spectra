@@ -1,7 +1,7 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import styled from 'styled-components';
-import { motion } from 'framer-motion';
+import React from "react";
+import { Link } from "react-router-dom";
+import styled from "styled-components";
+import { motion } from "framer-motion";
 
 const NavContainer = styled(motion.nav)`
   position: fixed;
@@ -9,14 +9,20 @@ const NavContainer = styled(motion.nav)`
   left: 50%;
   transform: translateX(-50%);
   z-index: 1000;
-  background-color: ${({ theme }) => theme.colors.spectraBlack};
-  border: 1px solid ${({ theme }) => theme.colors.spectraWhite};
   border-radius: 9999px;
   padding: 0.75rem 2rem;
   display: flex;
   align-items: center;
   gap: 2.5rem;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  border: 2px solid blue;
+  border-radius: 4rem;
+  padding: 1.2% 4em;
+  backdrop-filter: blur(10px) brightness(0.5);
+  background: transparent;
+  border: blue 2px solid;
+  padding: 1% 4%;
+  border-radius: 2px;
 `;
 
 const StyledLink = styled(Link)`
@@ -35,7 +41,7 @@ const StyledLink = styled(Link)`
   }
 
   &::after {
-    content: '';
+    content: "";
     position: absolute;
     bottom: -4px;
     left: 0;
@@ -54,15 +60,15 @@ const StyledLink = styled(Link)`
 const Navigation = () => {
   return (
     <NavContainer
-      initial={{ y: -100, x: '-50%', opacity: 0 }}
-      animate={{ y: 0, x: '-50%', opacity: 1 }}
+      initial={{ y: -100, x: "-50%", opacity: 0 }}
+      animate={{ y: 0, x: "-50%", opacity: 1 }}
       transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
     >
       <StyledLink to="/">Home</StyledLink>
-      <StyledLink to="/exchange">Exchange</StyledLink>
-      <StyledLink to="/agent">Agent</StyledLink>
-      <StyledLink to="/mint">NFT Minting</StyledLink>
       <StyledLink to="/about">About</StyledLink>
+      <StyledLink to="/agent">Agent</StyledLink>
+      <StyledLink to="/exchange">Exchange</StyledLink>
+      <StyledLink to="/mint">NFT Minting</StyledLink>
     </NavContainer>
   );
 };
