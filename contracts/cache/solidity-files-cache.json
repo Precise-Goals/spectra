@@ -880,8 +880,8 @@
       ]
     },
     "D:\\Workspace\\Projects\\spectra\\contracts\\src\\SpectraNFT.sol": {
-      "lastModificationDate": 1779388471362,
-      "contentHash": "4b2e13eebb8e57ea5c3046f5d32029a4",
+      "lastModificationDate": 1779433863296,
+      "contentHash": "afb2f80626f733e4e3de9e912842e40b",
       "sourceName": "src/SpectraNFT.sol",
       "solcConfig": {
         "version": "0.8.24",

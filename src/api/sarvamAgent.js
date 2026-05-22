@@ -40,9 +40,7 @@ const RETRY_BASE_DELAY_MS = 800;
  * Instructs the model to behave exclusively as a DeFi intent parser.
  * The strict formatting rules minimise hallucination and parsing failures.
  */
-const SYSTEM_PROMPT = `You are a Web3 DeFi intent parser embedded in a decentralized exchange application.
-
-Your ONLY job is to parse the user's natural-language instruction and return a SINGLE, strictly formatted JSON object — nothing else.
+const SYSTEM_PROMPT = `You are a strict Web3 DeFi intent parser. You must output ONLY a raw, valid JSON object. DO NOT output <think> tags. DO NOT output markdown formatting like \`\`\`json. DO NOT output any conversational text before or after the JSON.
 
 The JSON object MUST conform exactly to this schema:
 {
@@ -120,21 +118,26 @@ function classifyHttpError(status) {
  * @throws {SyntaxError} When the text cannot be parsed.
  */
 function extractIntentJson(raw) {
-  // Strip optional markdown code fences (```json … ```)
-  const stripped = raw
+  if (!raw) throw new Error("Empty response from AI.");
+
+  // 1. Strip out <think> blocks entirely using Regex (handles both closed and unclosed/truncated blocks)
+  let cleanText = raw.replace(/<think>[\s\S]*?(?:<\/think>|$)/gi, '').trim();
+
+  // 2. Strip out Markdown JSON wrappers if the model still outputs them
+  cleanText = cleanText
     .replace(/^```(?:json)?\s*/i, "")
     .replace(/\s*```$/, "")
     .trim();
 
-  // Locate the first JSON object in case the model prefixed with prose
-  const jsonStart = stripped.indexOf("{");
-  const jsonEnd = stripped.lastIndexOf("}");
+  // 3. Locate the first JSON object in case the model prefixed/suffixed with prose
+  const jsonStart = cleanText.indexOf("{");
+  const jsonEnd = cleanText.lastIndexOf("}");
 
   if (jsonStart === -1 || jsonEnd === -1 || jsonEnd < jsonStart) {
     throw new SyntaxError(`No JSON object found in model response: "${raw}"`);
   }
 
-  const parsed = JSON.parse(stripped.slice(jsonStart, jsonEnd + 1));
+  const parsed = JSON.parse(cleanText.slice(jsonStart, jsonEnd + 1));
 
   // Validate required keys
   const required = ["action", "amount", "token"];
@@ -181,7 +184,7 @@ async function callSarvamApi(userPrompt, apiKey) {
           { role: "user", content: userPrompt },
         ],
         temperature: 0.1,   // Keep determinism high for structured output
-        max_tokens: 256,
+        max_tokens: 1024,
         response_format: { type: "json_object" }, // Request JSON mode when supported
       }),
     });

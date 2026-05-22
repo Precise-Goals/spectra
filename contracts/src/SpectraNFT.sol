@@ -14,6 +14,7 @@ contract SpectraNFT is ERC721URIStorage, Ownable {
     error InsufficientTier();
     error AlreadyMintedThisCycle();
     error OnlyNexusCanUpdateMetadata();
+    error NonTransferable();
 
     SpectraSaaS public saasContract;
     uint256 private _nextTokenId;
@@ -24,12 +25,33 @@ contract SpectraNFT is ERC721URIStorage, Ownable {
     // Mapping to track which token belongs to which user (for simple dynamic update)
     mapping(address => uint256) public userTokenId;
 
+    // On-Chain Hexagon Badge Integration
+    mapping(address => uint256) public userTransactionCount;
+
+    // Badge types
+    uint256 public constant BADGE_GENESIS = 1;
+    uint256 public constant BADGE_VECTOR = 2;
+    uint256 public constant BADGE_NEXUS = 3;
+
+    // Mappings to track if a user already has a specific badge
+    mapping(address => mapping(uint256 => bool)) public hasBadge;
+
     event NFTMinted(address indexed user, uint256 tokenId, SpectraSaaS.PlanTier tier);
     event MetadataUpdated(uint256 indexed tokenId, string newURI);
+    event BadgeMinted(address indexed user, uint256 badgeType);
 
     constructor(address _saasContract) ERC721("Spectra Subscriber NFT", "SNFT") Ownable(msg.sender) {
         saasContract = SpectraSaaS(_saasContract);
     }
+
+    /**
+     * @dev Add transaction count for a user. Restricted to owner (e.g. backend/relayer)
+     */
+    function addTransactionCount(address user, uint256 count) external onlyOwner {
+        userTransactionCount[user] += count;
+    }
+
+    // --- Original Subscription Minting ---
 
     /**
      * @dev Mints an NFT based on the user's subscription tier.
@@ -73,6 +95,57 @@ contract SpectraNFT is ERC721URIStorage, Ownable {
 
         _setTokenURI(tokenId, newURI);
         emit MetadataUpdated(tokenId, newURI);
+    }
+
+    // --- On-Chain Hexagon Badges (Soulbound) ---
+
+    function mintGenesisBadge() external {
+        require(userTransactionCount[msg.sender] > 0, "Requires > 0 txs");
+        require(!hasBadge[msg.sender][BADGE_GENESIS], "Badge already minted");
+
+        uint256 tokenId = _nextTokenId++;
+        _safeMint(msg.sender, tokenId);
+        _setTokenURI(tokenId, "ipfs://badge-green");
+
+        hasBadge[msg.sender][BADGE_GENESIS] = true;
+        emit BadgeMinted(msg.sender, BADGE_GENESIS);
+    }
+
+    function mintVectorBadge() external {
+        SpectraSaaS.PlanTier tier = saasContract.getUserTier(msg.sender);
+        require(tier == SpectraSaaS.PlanTier.VECTOR || tier == SpectraSaaS.PlanTier.NEXUS, "Requires VECTOR tier");
+        require(!hasBadge[msg.sender][BADGE_VECTOR], "Badge already minted");
+
+        uint256 tokenId = _nextTokenId++;
+        _safeMint(msg.sender, tokenId);
+        _setTokenURI(tokenId, "ipfs://badge-yellow");
+
+        hasBadge[msg.sender][BADGE_VECTOR] = true;
+        emit BadgeMinted(msg.sender, BADGE_VECTOR);
+    }
+
+    function mintNexusBadge() external {
+        SpectraSaaS.PlanTier tier = saasContract.getUserTier(msg.sender);
+        require(tier == SpectraSaaS.PlanTier.NEXUS, "Requires NEXUS tier");
+        require(userTransactionCount[msg.sender] > 100, "Requires > 100 txs");
+        require(!hasBadge[msg.sender][BADGE_NEXUS], "Badge already minted");
+
+        uint256 tokenId = _nextTokenId++;
+        _safeMint(msg.sender, tokenId);
+        _setTokenURI(tokenId, "ipfs://badge-blue");
+
+        hasBadge[msg.sender][BADGE_NEXUS] = true;
+        emit BadgeMinted(msg.sender, BADGE_NEXUS);
+    }
+
+    // --- Soulbound Enforcement ---
+    function _update(address to, uint256 tokenId, address auth) internal virtual override returns (address) {
+        address from = _ownerOf(tokenId);
+        // Prevent transfers. Allow mints (from == address(0)) and burns (to == address(0)).
+        if (from != address(0) && to != address(0)) {
+            revert NonTransferable();
+        }
+        return super._update(to, tokenId, auth);
     }
 
     /**

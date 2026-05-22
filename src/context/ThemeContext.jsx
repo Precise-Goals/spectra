@@ -1,10 +1,12 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { ThemeProvider as StyledThemeProvider } from 'styled-components';
+import { theme as styledTheme } from '../styles/theme';
 
 const ThemeContext = createContext();
 
 export function ThemeProvider({ children }) {
   const [theme, setTheme] = useState(() => {
-    return localStorage.getItem('spectra-theme') || 'light';
+    return localStorage.getItem('spectra-theme') || 'dark';
   });
 
   useEffect(() => {
@@ -16,7 +18,9 @@ export function ThemeProvider({ children }) {
 
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>
-      {children}
+      <StyledThemeProvider theme={styledTheme}>
+        {children}
+      </StyledThemeProvider>
     </ThemeContext.Provider>
   );
 }

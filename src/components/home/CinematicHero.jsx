@@ -533,7 +533,12 @@ export default function CinematicHero() {
           </div>
         </HeroCard>
 
-        <StatsBar className="reveal-item delay-200">
+        <StatsBar className="reveal-item delay-200  "
+        style={{
+          position:"relative",
+          bottom: "2rem",
+        }}
+        >
           <StatItem>
             <StatLabel>Total Volume</StatLabel>
             <StatValue>$4.2B+</StatValue>

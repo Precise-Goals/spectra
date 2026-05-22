@@ -59,8 +59,10 @@ const Navigation = () => {
       transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
     >
       <StyledLink to="/">Home</StyledLink>
+      <StyledLink to="/exchange">Exchange</StyledLink>
+      <StyledLink to="/agent">Agent</StyledLink>
+      <StyledLink to="/mint">NFT Minting</StyledLink>
       <StyledLink to="/about">About</StyledLink>
-      <StyledLink to="/features">Features</StyledLink>
     </NavContainer>
   );
 };

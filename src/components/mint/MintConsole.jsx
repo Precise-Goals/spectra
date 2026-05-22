@@ -1,268 +1,210 @@
-import React, { useState } from 'react';
-import styled, { keyframes } from 'styled-components';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useMemo, useState } from 'react';
+import { ethers } from 'ethers';
+import { CONTRACT_ABIS, CONTRACT_ADDRESSES, TOKEN_ADDRESSES } from '../../config/contracts.js';
 
-// --- Styled Components ---
-
-const Wrapper = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-`;
-
-const NFTFrame = styled(motion.div)`
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-top: 1px solid rgba(176, 38, 255, 0.2);
-  border-radius: 20px;
-  background: rgba(10, 10, 11, 0.6);
-  backdrop-filter: blur(16px);
-  overflow: hidden;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 320px;
-  padding: 2rem;
-`;
-
-const RenderLabel = styled.div`
-  position: absolute;
-  top: 1rem;
-  left: 1.25rem;
-  font-family: 'Geist Mono', monospace;
-  font-size: 0.62rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.25);
-`;
-
-const StatusBadge = styled.div`
-  position: absolute;
-  top: 1rem;
-  right: 1.25rem;
-  font-family: 'Geist Mono', monospace;
-  font-size: 0.65rem;
-  letter-spacing: 0.08em;
-  color: ${({ minting }) => minting ? 'rgba(176,38,255,0.9)' : 'rgba(255,255,255,0.25)'};
-  border: 1px solid ${({ minting }) => minting ? 'rgba(176,38,255,0.3)' : 'rgba(255,255,255,0.1)'};
-  padding: 0.2rem 0.5rem;
-  border-radius: 5px;
-  transition: all 0.4s ease;
-`;
-
-const rotateWire = keyframes`
-  from { transform: rotateY(0deg) rotateX(15deg); }
-  to { transform: rotateY(360deg) rotateX(15deg); }
-`;
-
-const WireframeCube = styled.div`
-  width: 140px;
-  height: 140px;
-  position: relative;
-  perspective: 600px;
-  svg {
-    animation: ${rotateWire} ${({ minting }) => minting ? '1.5s' : '12s'} linear infinite;
-    stroke: ${({ minting }) => minting ? 'rgba(176,38,255,0.8)' : 'rgba(255,255,255,0.25)'};
-    filter: ${({ minting }) => minting ? 'drop-shadow(0 0 8px rgba(176,38,255,0.6))' : 'none'};
-    transition: stroke 0.4s ease, filter 0.4s ease;
-  }
-`;
-
-const ActionPanel = styled(motion.div)`
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.02);
-  padding: 1.25rem;
-`;
-
-const CostRow = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.25rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-`;
-
-const CostLabel = styled.span`
-  font-family: 'Geist Mono', monospace;
-  font-size: 0.7rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.3);
-`;
-
-const CostValue = styled.span`
-  font-family: 'Geist Mono', monospace;
-  font-size: 1rem;
-  font-weight: 600;
-  color: #ffffff;
-`;
-
-const MintButton = styled(motion.button)`
-  width: 100%;
-  padding: 1rem;
-  border-radius: 12px;
-  border: 1px solid ${({ minting, success }) =>
-    success ? 'rgba(100,220,150,0.4)' : minting ? 'rgba(176,38,255,0.5)' : 'rgba(255,255,255,0.08)'};
-  background: ${({ minting, success }) =>
-    success
-      ? 'rgba(100,220,150,0.1)'
-      : minting
-      ? 'rgba(176,38,255,0.12)'
-      : 'rgba(255,255,255,0.03)'};
-  color: ${({ minting, success }) =>
-    success ? 'rgba(100,220,150,0.9)' : minting ? 'rgba(176,38,255,0.9)' : 'rgba(255,255,255,0.7)'};
-  font-family: 'Geist Mono', monospace;
-  font-size: 0.78rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  cursor: ${({ disabled }) => disabled ? 'not-allowed' : 'pointer'};
-  transition: all 0.3s ease;
-  &:not(:disabled):hover {
-    background: rgba(176, 38, 255, 0.15);
-    border-color: rgba(176, 38, 255, 0.4);
-    color: rgba(176, 38, 255, 1);
-    box-shadow: 0 4px 20px rgba(176, 38, 255, 0.2);
-  }
-`;
-
-const ProgressBar = styled(motion.div)`
-  height: 2px;
-  background: linear-gradient(90deg, #B026FF, #FF26E1);
-  border-radius: 1px;
-  margin-top: 0.75rem;
-  box-shadow: 0 0 8px rgba(176, 38, 255, 0.5);
-`;
-
-const StatusMessage = styled(motion.div)`
-  font-family: 'Geist Mono', monospace;
-  font-size: 0.7rem;
-  letter-spacing: 0.06em;
-  color: rgba(176, 38, 255, 0.7);
-  margin-top: 0.5rem;
-  text-align: center;
-`;
-
-const steps = [
-  '[ INITIALIZING CONTRACT... ]',
-  '[ VERIFYING UGF BALANCE... ]',
-  '[ DEDUCTING FUNDS... ]',
-  '[ MINTING BADGE... ]',
+const TIERS = [
+  {
+    id: 'alpha',
+    name: 'ALPHA',
+    price: 'FREE',
+    deduction: '0.00',
+    plan: 0,
+    badge: '/badges/badge-green.png',
+    description: 'Read-only terminal access and public data feeds.',
+    features: ['Read-only terminal access', 'Public data feeds', 'Agent deployment'],
+  },
+  {
+    id: 'vector',
+    name: 'VECTOR',
+    price: '$15 / MO',
+    deduction: '15.00',
+    plan: 1,
+    badge: '/badges/badge-yellow.png',
+    description: 'Standard terminal access with private data channels.',
+    features: ['Standard terminal access', 'Private data channels', '1 Concurrent Agent'],
+  },
+  {
+    id: 'nexus',
+    name: 'NEXUS',
+    price: '$49 / MO',
+    deduction: '49.00',
+    plan: 2,
+    badge: '/badges/badge-blue.png',
+    description: 'Root terminal access with unlimited data pipelines.',
+    features: ['Root terminal access', 'Unlimited data pipelines', 'Infinite Agent swarm'],
+  },
 ];
 
-/**
- * @param {object} props
- * @param {{ name: string, cost: number }} props.selectedTier
- */
-export default function MintConsole({ selectedTier = { name: 'NEXUS', cost: 49 } }) {
-  const [minting, setMinting] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [statusMsg, setStatusMsg] = useState('');
+const ZERO = '0.00';
 
-  const handleMint = () => {
-    if (minting || success) return;
-    setMinting(true);
-    setProgress(0);
-    let stepIdx = 0;
-    setStatusMsg(steps[0]);
+export default function MintConsole() {
+  const [selectedTier, setSelectedTier] = useState('nexus');
+  const [ethBalance, setEthBalance] = useState(ZERO);
+  const [mockUsdBalance, setMockUsdBalance] = useState(ZERO);
+  const [isMinting, setIsMinting] = useState(false);
+  const [status, setStatus] = useState('IDLE');
+  const [feedback, setFeedback] = useState('');
+  const [txHash, setTxHash] = useState('');
 
-    const interval = setInterval(() => {
-      stepIdx++;
-      const pct = (stepIdx / steps.length) * 100;
-      setProgress(pct);
-      if (stepIdx < steps.length) setStatusMsg(steps[stepIdx]);
+  const activeTier = useMemo(() => TIERS.find((tier) => tier.id === selectedTier) || TIERS[2], [selectedTier]);
 
-      if (stepIdx >= steps.length) {
-        clearInterval(interval);
-        setMinting(false);
-        setSuccess(true);
-        setStatusMsg('[ SUCCESS: TRANSACTION CONFIRMED ]');
-        setTimeout(() => {
-          setSuccess(false);
-          setProgress(0);
-          setStatusMsg('');
-        }, 4000);
-      }
-    }, 800);
+  const fetchBalances = async (provider, address) => {
+    const [ethRaw, mockUsdContract] = await Promise.all([
+      provider.getBalance(address),
+      Promise.resolve(new ethers.Contract(TOKEN_ADDRESSES.MUSD, CONTRACT_ABIS.MOCK_USD, provider)),
+    ]);
+
+    const decimals = await mockUsdContract.decimals();
+    const mockUsdRaw = await mockUsdContract.balanceOf(address);
+
+    setEthBalance(Number(ethers.formatEther(ethRaw)).toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 4 }));
+    setMockUsdBalance(Number(ethers.formatUnits(mockUsdRaw, decimals)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
   };
 
-  const buttonLabel = success
-    ? 'MINT SUCCESSFUL'
-    : minting
-    ? 'PROCESSING...'
-    : 'MINT SUBSCRIPTION BADGE';
+  const connectWallet = async () => {
+    if (!window.ethereum) {
+      throw new Error('No injected wallet found.');
+    }
+
+    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+    if (!accounts?.length) {
+      throw new Error('Wallet returned no accounts.');
+    }
+
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    await fetchBalances(provider, accounts[0]);
+    return { provider, account: accounts[0] };
+  };
+
+  const approveIfNeeded = async (signer, spender, amountWei) => {
+    const token = new ethers.Contract(TOKEN_ADDRESSES.MUSD, CONTRACT_ABIS.MOCK_USD, signer);
+    const owner = await signer.getAddress();
+    const allowance = await token.allowance(owner, spender);
+
+    if (allowance >= amountWei) {
+      return;
+    }
+
+    setStatus('APPROVING');
+    const approveTx = await token.approve(spender, amountWei);
+    await approveTx.wait();
+  };
+
+  const handleMint = async () => {
+    if (isMinting) {
+      return;
+    }
+
+    setIsMinting(true);
+    setFeedback('');
+    setTxHash('');
+
+    try {
+      const tier = activeTier;
+      if (tier.id === 'alpha') {
+        throw new Error('Alpha tier is read-only and cannot mint a subscription badge.');
+      }
+
+      setStatus('CONNECTING');
+      const { provider, account } = await connectWallet();
+      const signer = await provider.getSigner();
+      const feeAmount = ethers.parseUnits(String(tier.deduction), 18);
+
+      await approveIfNeeded(signer, CONTRACT_ADDRESSES.SPECTRA_SAAS, feeAmount);
+
+      setStatus('SUBSCRIBING');
+      const saas = new ethers.Contract(CONTRACT_ADDRESSES.SPECTRA_SAAS, CONTRACT_ABIS.SPECTRA_SAAS, signer);
+      const subscribeTx = await saas.subscribe(tier.plan);
+      await subscribeTx.wait();
+
+      setStatus('MINTING');
+      const nft = new ethers.Contract(CONTRACT_ADDRESSES.SPECTRA_NFT, CONTRACT_ABIS.SPECTRA_NFT, signer);
+      const mintTx = await nft.mintSubscribedNFT(`ipfs://spectra-subscription-${tier.id}`);
+      await mintTx.wait();
+
+      setTxHash(mintTx.hash);
+      setStatus('MINTED');
+      await fetchBalances(provider, account);
+    } catch (mintError) {
+      if (mintError?.code === 4001) {
+        setFeedback('Transaction rejected by user.');
+      } else {
+        setFeedback(mintError?.shortMessage || mintError?.message || 'Mint request failed.');
+      }
+      setStatus('ERROR');
+    } finally {
+      setIsMinting(false);
+    }
+  };
 
   return (
-    <Wrapper>
-      <NFTFrame
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ type: 'spring', damping: 25, stiffness: 80 }}
-      >
-        <RenderLabel>[ Render View ]</RenderLabel>
-        <StatusBadge minting={minting || success}>
-          {success ? 'MINTED' : minting ? 'MINTING' : 'IDLE'}
-        </StatusBadge>
+    <div className="spectra-mint-grid">
+      <div className="spectra-mint-left">
+        <div className="spectra-render-box">
+          <div className="spectra-render-label">[ RENDER VIEW ]</div>
+          <div className="spectra-status-badge">{status}</div>
+          <img className="spectra-badge-image" src={activeTier.badge} alt={`${activeTier.name} badge`} />
+        </div>
 
-        <WireframeCube minting={minting}>
-          <svg viewBox="0 0 100 100" width="140" height="140" fill="none" strokeWidth="0.6">
-            <polygon points="50,10 90,30 90,70 50,90 10,70 10,30" />
-            <line x1="50" y1="10" x2="50" y2="50" />
-            <line x1="90" y1="30" x2="50" y2="50" />
-            <line x1="10" y1="30" x2="50" y2="50" />
-            <line x1="50" y1="50" x2="50" y2="90" />
-            <line x1="10" y1="70" x2="50" y2="50" />
-            <line x1="90" y1="70" x2="50" y2="50" />
-          </svg>
-        </WireframeCube>
-      </NFTFrame>
+        <div className="spectra-action-box">
+          <div className="spectra-action-head">
+            <span className="spectra-action-label">Estimated Deduction</span>
+            <span className="spectra-action-value">{activeTier.deduction} UGF/MO</span>
+          </div>
+          <button className="spectra-mint-btn" type="button" onClick={handleMint} disabled={isMinting}>
+            {isMinting ? 'Awaiting Wallet Confirmation...' : 'Mint Subscription Badge'}
+          </button>
+          <div className="spectra-mint-status">{status === 'MINTED' ? 'SUCCESS: TRANSACTION CONFIRMED' : `STATUS: ${status}`}</div>
+          <div className="spectra-balance-stack">
+            <span className="spectra-balance-text">Base Sepolia ETH: {ethBalance}</span>
+            <span className="spectra-balance-text">Mock USD: {mockUsdBalance}</span>
+          </div>
+          {txHash && <div className="spectra-tx-panel">Mint confirmed: {txHash}</div>}
+          {feedback && <div className="spectra-error-box">{feedback}</div>}
+        </div>
+      </div>
 
-      <ActionPanel
-        initial={{ opacity: 0, y: 10 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ delay: 0.1, type: 'spring', damping: 25, stiffness: 80 }}
-      >
-        <CostRow>
-          <CostLabel>Estimated Deduction</CostLabel>
-          <CostValue>{selectedTier.cost}.00 UGF/MO</CostValue>
-        </CostRow>
-
-        <MintButton
-          disabled={minting}
-          minting={minting}
-          success={success}
-          onClick={handleMint}
-          whileTap={!minting ? { scale: 0.98 } : {}}
-        >
-          {buttonLabel}
-        </MintButton>
-
-        <AnimatePresence>
-          {(minting || success) && (
-            <>
-              <ProgressBar
-                key="progress"
-                initial={{ width: '0%' }}
-                animate={{ width: `${progress}%` }}
-                transition={{ duration: 0.5, ease: 'easeOut' }}
-              />
-              <StatusMessage
-                key="status"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
+      <div className="spectra-mint-right">
+        <div className="spectra-tier-label">Select Access Tier</div>
+        <div className="spectra-tier-grid">
+          {TIERS.map((tier) => {
+            const isActive = tier.id === selectedTier;
+            return (
+              <div
+                key={tier.id}
+                className={`spectra-tier-card ${isActive ? 'spectra-tier-card-active' : ''}`}
+                onClick={() => setSelectedTier(tier.id)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    setSelectedTier(tier.id);
+                  }
+                }}
               >
-                {statusMsg}
-              </StatusMessage>
-            </>
-          )}
-        </AnimatePresence>
-      </ActionPanel>
-    </Wrapper>
+                <div className="spectra-tier-top">
+                  <h3 className="spectra-tier-name">{tier.name}</h3>
+                  <div className="spectra-tier-price">{tier.price}</div>
+                </div>
+                <p className="spectra-tier-description">{tier.description}</p>
+                <ul className="spectra-tier-list">
+                  {tier.features.map((feature, index) => (
+                    <li key={feature} className="spectra-tier-item">
+                      <span className="material-symbols-outlined spectra-tier-icon">
+                        {tier.id === 'alpha' && index === 2 ? 'close' : 'check'}
+                      </span>
+                      <span className="spectra-tier-feature">{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+                <div className={`spectra-tier-foot ${isActive ? 'spectra-tier-foot-active' : ''}`}>
+                  {isActive ? 'ACTIVE SELECTION' : `SELECT [ ${tier.name.charAt(0)} ]`}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
   );
 }

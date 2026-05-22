@@ -167,7 +167,7 @@
 
   &::before,
   &::after {
-    content: '';
+    content: "";
     position: absolute;
     top: -4.5px;
     border: 5px solid transparent;
@@ -181,4 +181,16 @@
     right: 0;
     border-right-color: var(--border);
   }
+}
+.sc-otWXT.eBQKAz {
+  margin-top: 5%;
+}
+main.spectra-exchange-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.spectra-exchange-header {
+  text-align: center;
 }

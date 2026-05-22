@@ -58,30 +58,16 @@ const FooterLink = styled(Link)`
   }
 `;
 
-const FooterAnchor = styled.a`
-  font-family: 'Geist', monospace;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--color-secondary);
-  text-decoration: none;
-
-  &:hover {
-    color: var(--color-primary);
-  }
-`;
-
 /* ─── Component ──────────────────────────────────────────────────────────────── */
 export default function Footer() {
   return (
     <FooterEl>
       <Copyright>© 2026 Spectra. Gasless Execution.</Copyright>
       <LinkGroup>
-        <FooterAnchor href="#">Documentation</FooterAnchor>
-        <FooterAnchor href="#">Terminal</FooterAnchor>
-        <FooterAnchor href="#">Security</FooterAnchor>
-        <FooterAnchor href="#">Status</FooterAnchor>
+        <FooterLink to="/about">Documentation</FooterLink>
+        <FooterLink to="/agent">Terminal</FooterLink>
+        <FooterLink to="/about">Security</FooterLink>
+        <FooterLink to="/exchange">Status</FooterLink>
         <FooterLink to="/about">EU AI Act Compliance</FooterLink>
       </LinkGroup>
     </FooterEl>

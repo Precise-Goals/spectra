@@ -1,341 +1,247 @@
-import React, { useState } from 'react';
-import styled from 'styled-components';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Send, CheckCircle2, AlertCircle, Fingerprint } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { ethers } from 'ethers';
 import { tryParseDefiIntent } from '../../api/sarvamAgent.js';
+import { CONTRACT_ABIS, CONTRACT_ADDRESSES, TOKEN_ADDRESSES } from '../../config/contracts.js';
 
-// --- Styled Components ---
-
-const Container = styled.div`
-  width: 100%;
-  min-height: 80vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 2rem;
-  position: relative;
-  z-index: 10;
-`;
-
-const GlassPanel = styled(motion.div)`
-  width: 100%;
-  max-width: 560px;
-  background: rgba(10, 10, 11, 0.5);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 24px;
-  padding: 2.5rem;
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-`;
-
-const Title = styled.h2`
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #ffffff;
-  margin-bottom: 0.5rem;
-`;
-
-const Subtitle = styled.p`
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 0.95rem;
-  margin-bottom: 2rem;
-`;
-
-const InputWrapper = styled.form`
-  position: relative;
-  display: flex;
-  align-items: center;
-  margin-bottom: 1rem;
-`;
-
-const StyledInput = styled.input`
-  width: 100%;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
-  padding: 1.25rem 3.5rem 1.25rem 1.25rem;
-  font-size: 1rem;
-  color: #ffffff;
-  outline: none;
-  transition: all 0.3s ease;
-
-  &:focus {
-    border-color: rgba(176, 38, 255, 0.5);
-    background: rgba(255, 255, 255, 0.05);
-    box-shadow: 0 0 0 4px rgba(176, 38, 255, 0.1);
-  }
-
-  &::placeholder {
-    color: rgba(255, 255, 255, 0.3);
-  }
-`;
-
-const SubmitButton = styled(motion.button)`
-  position: absolute;
-  right: 0.75rem;
-  background: transparent;
-  border: none;
-  color: #B026FF;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 0.5rem;
-  border-radius: 50%;
-  cursor: pointer;
-  outline: none;
-
-  &:disabled {
-    color: rgba(255, 255, 255, 0.2);
-    cursor: not-allowed;
-  }
-`;
-
-// --- Fading Geometric Waves Animation ---
-const WavesContainer = styled(motion.div)`
-  position: relative;
-  width: 100%;
-  height: 80px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin: 1.5rem 0;
-`;
-
-const WaveRing = styled(motion.div)`
-  position: absolute;
-  border: 2px solid rgba(176, 38, 255, 0.8);
-  border-radius: 50%;
-  box-shadow: 0 0 20px rgba(176, 38, 255, 0.2);
-`;
-
-const GeometricWaves = () => (
-  <WavesContainer
-    initial={{ opacity: 0 }}
-    animate={{ opacity: 1 }}
-    exit={{ opacity: 0 }}
-  >
-    {[0, 1, 2].map((i) => (
-      <WaveRing
-        key={i}
-        style={{ width: 40, height: 40 }}
-        animate={{ 
-          scale: [1, 2.5], 
-          opacity: [0.8, 0] 
-        }}
-        transition={{ 
-          duration: 1.5, 
-          repeat: Infinity, 
-          delay: i * 0.5, 
-          ease: "easeOut" 
-        }}
-      />
-    ))}
-  </WavesContainer>
-);
-
-// --- Confirmation Card ---
-
-const ConfirmationCard = styled(motion.div)`
-  margin-top: 1.5rem;
-  padding: 1.5rem;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(176, 38, 255, 0.3);
-  border-radius: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  overflow: hidden;
-  position: relative;
-`;
-
-const CardGlow = styled.div`
-  position: absolute;
-  top: -50px;
-  right: -50px;
-  width: 100px;
-  height: 100px;
-  background: rgba(176, 38, 255, 0.3);
-  filter: blur(40px);
-  border-radius: 50%;
-  pointer-events: none;
-`;
-
-const IntentRow = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-bottom: 0.75rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  
-  &:last-of-type {
-    border-bottom: none;
-    padding-bottom: 0;
-  }
-`;
-
-const Label = styled.span`
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 0.9rem;
-`;
-
-const Value = styled.span`
-  color: #ffffff;
-  font-weight: 600;
-  font-size: 1.1rem;
-  text-transform: uppercase;
-`;
-
-const SignButton = styled(motion.button)`
-  margin-top: 1rem;
-  width: 100%;
-  padding: 1rem;
-  border-radius: 12px;
-  background: linear-gradient(90deg, #B026FF, #7B26FF);
-  color: white;
-  border: none;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 0.5rem;
-  box-shadow: 0 4px 15px rgba(176, 38, 255, 0.3);
-  
-  &:hover {
-    box-shadow: 0 6px 20px rgba(176, 38, 255, 0.5);
-  }
-`;
-
-const ErrorMsg = styled(motion.div)`
-  margin-top: 1rem;
-  padding: 1rem;
-  border-radius: 12px;
-  background: rgba(255, 59, 48, 0.1);
-  border: 1px solid rgba(255, 59, 48, 0.3);
-  color: #ff3b30;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.95rem;
-`;
-
-// --- Main Component ---
+function buildIntentJson(intent) {
+  return {
+    intent_id: `0x${ethers.id(`${intent.action}:${intent.amount}:${intent.token}:${Date.now()}`).slice(2, 10)}...${Date.now().toString(16).slice(-4)}`,
+    trigger: {
+      type: 'USER_SIGNATURE',
+      network: 'base_sepolia',
+      condition: 'immediate',
+    },
+    execution_graph: [
+      {
+        step: 1,
+        action: intent.action.toUpperCase(),
+        amount: intent.amount,
+        asset: intent.token,
+        venue: 'SPECTRA_EXCHANGE',
+      },
+    ],
+    estimated_fees: 'wallet-estimated',
+  };
+}
 
 export default function AgentTerminal() {
-  const [prompt, setPrompt] = useState("");
+  const [prompt, setPrompt] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isExecuting, setIsExecuting] = useState(false);
   const [intent, setIntent] = useState(null);
-  const [error, setError] = useState(null);
+  const [walletAddress, setWalletAddress] = useState('');
+  const [status, setStatus] = useState('READY');
+  const [error, setError] = useState('');
+  const [txHash, setTxHash] = useState('');
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!prompt.trim() || isLoading) return;
+  const intentJson = useMemo(() => {
+    if (!intent) {
+      return null;
+    }
+    return buildIntentJson(intent);
+  }, [intent]);
+
+  const connectWallet = async () => {
+    if (!window.ethereum) {
+      throw new Error('No injected wallet found. Install MetaMask or a compatible wallet.');
+    }
+
+    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+    if (!accounts?.length) {
+      throw new Error('Wallet returned no accounts.');
+    }
+    setWalletAddress(accounts[0]);
+    return accounts[0];
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    if (!prompt.trim() || isLoading) {
+      return;
+    }
 
     setIsLoading(true);
-    setError(null);
+    setError('');
+    setTxHash('');
+    setStatus('PARSING');
     setIntent(null);
 
-    // Call the Sarvam AI utility
-    const result = await tryParseDefiIntent(prompt);
-
-    if (result) {
-      if (result.action === 'unknown') {
-        setError("Could not parse a valid DeFi intent. Please be more specific (e.g. 'Swap 10 USDC for ETH').");
+    try {
+      const result = await tryParseDefiIntent(prompt.trim());
+      if (!result || result.action === 'unknown') {
+        setError('Intent parsing failed. Provide a concrete on-chain action like "swap 10 MUSD to ETH".');
+        setStatus('ERROR');
       } else {
         setIntent(result);
+        setStatus('READY');
       }
-    } else {
-      setError("Failed to communicate with the Agent. Please check your API key or connection.");
+    } catch (parseError) {
+      setError(parseError?.message || 'Agent parser request failed.');
+      setStatus('ERROR');
+    } finally {
+      setIsLoading(false);
     }
-    
-    setIsLoading(false);
+  };
+
+  const handleSignAndExecute = async () => {
+    if (!intent || isExecuting) {
+      return;
+    }
+
+    setError('');
+    setTxHash('');
+    setIsExecuting(true);
+    setStatus('AWAITING_SIGNATURE');
+
+    try {
+      const account = walletAddress || (await connectWallet());
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+      const network = await provider.getNetwork();
+
+      const domain = {
+        name: 'SpectraIntentEngine',
+        version: '1',
+        chainId: Number(network.chainId),
+        verifyingContract: CONTRACT_ADDRESSES.SPECTRA_EXCHANGE,
+      };
+
+      const types = {
+        SpectraIntent: [
+          { name: 'action', type: 'string' },
+          { name: 'amount', type: 'string' },
+          { name: 'token', type: 'string' },
+          { name: 'timestamp', type: 'uint256' },
+        ],
+      };
+
+      const value = {
+        action: intent.action,
+        amount: String(intent.amount),
+        token: intent.token,
+        timestamp: BigInt(Date.now()),
+      };
+
+      await signer.signTypedData(domain, types, value);
+
+      setStatus('SUBMITTING_TRANSACTION');
+
+      const tokenOut = TOKEN_ADDRESSES[intent.token] || TOKEN_ADDRESSES.MUSD;
+      const amountIn = ethers.parseUnits(String(intent.amount || '0'), 18);
+      const iface = new ethers.Interface(CONTRACT_ABIS.SPECTRA_EXCHANGE);
+      const data = iface.encodeFunctionData('swap', [
+        TOKEN_ADDRESSES.MUSD,
+        tokenOut,
+        amountIn,
+        0n,
+      ]);
+
+      const hash = await window.ethereum.request({
+        method: 'eth_sendTransaction',
+        params: [
+          {
+            from: account,
+            to: CONTRACT_ADDRESSES.SPECTRA_EXCHANGE,
+            data,
+            value: '0x0',
+          },
+        ],
+      });
+
+      setTxHash(hash);
+      setStatus('EXECUTED');
+    } catch (executionError) {
+      if (executionError?.code === 4001) {
+        setError('Signature or transaction rejected by user.');
+      } else {
+        setError(executionError?.message || 'Execution failed.');
+      }
+      setStatus('ERROR');
+    } finally {
+      setIsExecuting(false);
+    }
   };
 
   return (
-    <Container>
-      <GlassPanel
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ type: "spring", damping: 25, stiffness: 120 }}
-      >
-        <Title>AI Wallet Agent</Title>
-        <Subtitle>Type your intent and let the agent construct the transaction.</Subtitle>
+    <div className="spectra-agent-page">
+      <div className="spectra-agent-terminal-shell">
+        <div className="spectra-agent-terminal-header">
+          <div className="spectra-agent-header-left">
+            <span className="material-symbols-outlined spectra-agent-header-icon">terminal</span>
+            <span className="spectra-agent-header-title">AGENTIC_WALLET_OS // ACTIVE_MODE</span>
+          </div>
+          <div className="spectra-agent-header-right">
+            <span className="spectra-agent-dot" />
+            <span className="spectra-agent-dot" />
+            <span className="spectra-agent-dot" />
+          </div>
+        </div>
 
-        <InputWrapper onSubmit={handleSubmit}>
-          <StyledInput
-            type="text"
-            placeholder="e.g. Swap 0.5 ETH for USDC"
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            disabled={isLoading}
-            autoComplete="off"
-          />
-          <SubmitButton 
-            type="submit" 
-            disabled={!prompt.trim() || isLoading}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-          >
-            <Send size={20} />
-          </SubmitButton>
-        </InputWrapper>
+        <div className="spectra-agent-chat">
+          <div className="spectra-agent-card spectra-agent-card-user">
+            <span className="spectra-agent-label">USER_INPUT</span>
+            <div className="spectra-agent-bubble">{prompt || 'Type an on-chain instruction below.'}</div>
+          </div>
 
-        <AnimatePresence mode="wait">
-          {isLoading && <GeometricWaves key="waves" />}
-          
-          {error && (
-            <ErrorMsg 
-              key="error"
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-            >
-              <AlertCircle size={18} />
-              {error}
-            </ErrorMsg>
-          )}
-
-          {intent && !isLoading && (
-            <ConfirmationCard
-              key="intent"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ type: "spring", damping: 20, stiffness: 100 }}
-            >
-              <CardGlow />
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                <CheckCircle2 size={20} color="#B026FF" />
-                <span style={{ color: '#fff', fontWeight: 500 }}>Intent Parsed Successfully</span>
+          <div className="spectra-agent-card spectra-agent-card-system">
+            <span className="spectra-agent-label">SYSTEM_AGENT</span>
+            <div className="spectra-agent-bubble">
+              <div className="spectra-agent-system-lines">
+                <p className="spectra-agent-line">&gt; Parsing intent...</p>
+                <p className="spectra-agent-line">&gt; Constructing transaction payload...</p>
+                <p className="spectra-agent-line">
+                  &gt; Status: <span className="spectra-agent-status">[ {status} ]</span>
+                </p>
               </div>
-              
-              <IntentRow>
-                <Label>Action</Label>
-                <Value>{intent.action}</Value>
-              </IntentRow>
-              <IntentRow>
-                <Label>Amount</Label>
-                <Value>{intent.amount}</Value>
-              </IntentRow>
-              <IntentRow>
-                <Label>Token</Label>
-                <Value>{intent.token}</Value>
-              </IntentRow>
 
-              <SignButton
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => console.log('Initiating signature for:', intent)}
+              <div className="spectra-agent-json">
+                <pre className="spectra-agent-pre">
+                  {JSON.stringify(intentJson || {
+                    intent_id: 'pending',
+                    trigger: { type: 'USER_SIGNATURE', network: 'base_sepolia', condition: 'awaiting_prompt' },
+                    execution_graph: [],
+                    estimated_fees: 'wallet-estimated',
+                  }, null, 2)}
+                </pre>
+              </div>
+
+              <button
+                type="button"
+                className="spectra-agent-cta"
+                onClick={handleSignAndExecute}
+                disabled={!intent || isExecuting}
               >
-                <Fingerprint size={18} />
-                Sign Transaction (EIP-712)
-              </SignButton>
-            </ConfirmationCard>
-          )}
-        </AnimatePresence>
-      </GlassPanel>
-    </Container>
+                <span className="material-symbols-outlined spectra-agent-cta-icon">signature</span>
+                <span className="spectra-agent-cta-text">{isExecuting ? 'Awaiting Wallet...' : 'Sign & Execute (EIP-712)'}</span>
+              </button>
+
+              {walletAddress && (
+                <p className="spectra-agent-line spectra-agent-wallet">Connected: {walletAddress}</p>
+              )}
+              {txHash && (
+                <p className="spectra-agent-line spectra-agent-wallet">Tx Hash: {txHash}</p>
+              )}
+            </div>
+          </div>
+
+          {error && <div className="spectra-agent-error">{error}</div>}
+        </div>
+
+        <form className="spectra-agent-input-row" onSubmit={handleSubmit}>
+          <span className="material-symbols-outlined spectra-agent-input-icon">chevron_right</span>
+          <input
+            className="spectra-agent-input"
+            placeholder="What onchain action can I route for you?"
+            type="text"
+            value={prompt}
+            onChange={(event) => setPrompt(event.target.value)}
+            disabled={isLoading || isExecuting}
+          />
+          <button className="spectra-agent-submit" type="submit" disabled={isLoading || isExecuting || !prompt.trim()}>
+            {isLoading ? '[ PARSING ]' : '[ SUBMIT ]'}
+          </button>
+        </form>
+      </div>
+    </div>
   );
 }

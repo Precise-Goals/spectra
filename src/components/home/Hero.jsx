@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import styled, { keyframes } from 'styled-components';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 
 // --- Styled Components ---
 
@@ -139,6 +140,7 @@ const MagneticButton = ({ children, onClick }) => {
 };
 
 export default function Hero() {
+  const navigate = useNavigate();
   const headlineText = "Trade with Intents. Seamlessly.";
   // Split the text into an array of words
   const words = headlineText.split(" ");
@@ -204,7 +206,7 @@ export default function Hero() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 1.2, duration: 0.8, ease: "easeOut" }}
       >
-        <MagneticButton onClick={() => console.log("Launch App Clicked")}>
+        <MagneticButton onClick={() => navigate('/agent')}>
           Launch App
         </MagneticButton>
       </motion.div>
