@@ -92,7 +92,7 @@ To safeguard the platform against compliance challenges within European jurisdic
 The monorepo separates smart contract development from frontend execution. Here is the architectural layout and team distribution:
 
 ```text
-spectra-core/
+spectra/
 ├── /contracts                  # Smart Contract Workspace (Solidity)
 │   ├── src/
 │   │   ├── SpectraSaaS.sol     # Tracks subscription tiers (20/60/100) & auto-deductions
