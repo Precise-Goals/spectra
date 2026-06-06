@@ -101,10 +101,10 @@ const ContrastButton = styled.button`
 /* ─── Component ──────────────────────────────────────────────────────────────── */
 const NAV_LINKS = [
   { to: '/',         label: 'Home' },
-  { to: '/exchange', label: 'Exchange' },
-  { to: '/agent',    label: 'Agent' },
-  { to: '/mint',     label: 'NFT Minting' },
   { to: '/about',    label: 'About' },
+  { to: '/agent',    label: 'Agent' },
+  { to: '/exchange', label: 'Exchange' },
+  { to: '/mint',     label: 'NFT Minting' },
 ];
 
 export default function FluidNav() {

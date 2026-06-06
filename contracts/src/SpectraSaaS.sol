@@ -46,9 +46,9 @@ contract SpectraSaaS is Ownable, ReentrancyGuard {
         // Alpha Tier: Free, 20 tx/day
         tiers[PlanTier.ALPHA] = TierInfo(20, 0, false);
         // Vector Tier: $15, 60 tx/day
-        tiers[PlanTier.VECTOR] = TierInfo(60, 15 * 10**18, true);
+        tiers[PlanTier.VECTOR] = TierInfo(60, 15 * 10**6, true);
         // Nexus Tier: $49, 100 tx/day
-        tiers[PlanTier.NEXUS] = TierInfo(100, 49 * 10**18, true);
+        tiers[PlanTier.NEXUS] = TierInfo(100, 49 * 10**6, true);
     }
 
     /**
@@ -69,6 +69,18 @@ contract SpectraSaaS is Ownable, ReentrancyGuard {
         });
 
         emit Subscribed(msg.sender, _tier);
+    }
+
+    /**
+     * @dev Cancels/unsubscribes the user, resetting their tier to ALPHA (free tier).
+     */
+    function cancelSubscription() external {
+        userSubscriptions[msg.sender] = UserSubscription({
+            tier: PlanTier.ALPHA,
+            lastBillingTimestamp: block.timestamp,
+            nextBillingTimestamp: block.timestamp
+        });
+        emit Subscribed(msg.sender, PlanTier.ALPHA);
     }
 
     /**

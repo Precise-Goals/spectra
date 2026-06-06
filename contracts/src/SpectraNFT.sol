@@ -127,7 +127,6 @@ contract SpectraNFT is ERC721URIStorage, Ownable {
     function mintNexusBadge() external {
         SpectraSaaS.PlanTier tier = saasContract.getUserTier(msg.sender);
         require(tier == SpectraSaaS.PlanTier.NEXUS, "Requires NEXUS tier");
-        require(userTransactionCount[msg.sender] > 100, "Requires > 100 txs");
         require(!hasBadge[msg.sender][BADGE_NEXUS], "Badge already minted");
 
         uint256 tokenId = _nextTokenId++;
@@ -136,6 +135,43 @@ contract SpectraNFT is ERC721URIStorage, Ownable {
 
         hasBadge[msg.sender][BADGE_NEXUS] = true;
         emit BadgeMinted(msg.sender, BADGE_NEXUS);
+    }
+
+    /**
+     * @dev Burns/cancels a specific NFT badge owned by the caller.
+     */
+    function burn(uint256 tokenId) external {
+        require(ownerOf(tokenId) == msg.sender, "Not the owner");
+        
+        // Reset userTokenId if it's the one we're burning
+        if (userTokenId[msg.sender] == tokenId) {
+            userTokenId[msg.sender] = 0;
+        }
+
+        // Check if it's one of the badges and reset badge mapping
+        if (hasBadge[msg.sender][BADGE_GENESIS]) {
+            try this.tokenURI(tokenId) returns (string memory uri) {
+                if (keccak256(bytes(uri)) == keccak256(bytes("ipfs://badge-green"))) {
+                    hasBadge[msg.sender][BADGE_GENESIS] = false;
+                }
+            } catch {}
+        }
+        if (hasBadge[msg.sender][BADGE_VECTOR]) {
+            try this.tokenURI(tokenId) returns (string memory uri) {
+                if (keccak256(bytes(uri)) == keccak256(bytes("ipfs://badge-yellow"))) {
+                    hasBadge[msg.sender][BADGE_VECTOR] = false;
+                }
+            } catch {}
+        }
+        if (hasBadge[msg.sender][BADGE_NEXUS]) {
+            try this.tokenURI(tokenId) returns (string memory uri) {
+                if (keccak256(bytes(uri)) == keccak256(bytes("ipfs://badge-blue"))) {
+                    hasBadge[msg.sender][BADGE_NEXUS] = false;
+                }
+            } catch {}
+        }
+
+        _burn(tokenId);
     }
 
     // --- Soulbound Enforcement ---

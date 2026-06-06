@@ -1,10 +1,11 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { ethers } from 'ethers';
+import { useUGF } from '../../hooks/useUGF';
 import { CONTRACT_ABIS, CONTRACT_ADDRESSES, TOKEN_ADDRESSES } from '../../config/contracts.js';
 
 const ERC20_ABI = [
   'function balanceOf(address owner) view returns (uint256)',
-  'function approve(address spender, uint256 value) returns (bool)',
+  'function approve(address spender, uint256 amount) returns (bool)',
   'function allowance(address owner, address spender) view returns (uint256)',
   'function decimals() view returns (uint8)',
 ];
@@ -16,7 +17,8 @@ const TIERS = [
     price: 'FREE',
     deduction: '0.00',
     plan: 0,
-    badge: '/badges/badge-green.png',
+    badge: '/1.png',
+    spline: '/1.mp4',
     description: 'Read-only terminal access and public data feeds.',
     features: ['Read-only terminal access', 'Public data feeds', 'Agent deployment'],
   },
@@ -26,7 +28,8 @@ const TIERS = [
     price: '$15 / MO',
     deduction: '15.00',
     plan: 1,
-    badge: '/badges/badge-yellow.png',
+    badge: '/2.png',
+    spline: '/2.mp4',
     description: 'Standard terminal access with private data channels.',
     features: ['Standard terminal access', 'Private data channels', '1 Concurrent Agent'],
   },
@@ -36,7 +39,8 @@ const TIERS = [
     price: '$49 / MO',
     deduction: '49.00',
     plan: 2,
-    badge: '/badges/badge-blue.png',
+    badge: '/3.png',
+    spline: '/3.mp4',
     description: 'Root terminal access with unlimited data pipelines.',
     features: ['Root terminal access', 'Unlimited data pipelines', 'Infinite Agent swarm'],
   },
@@ -50,22 +54,82 @@ export default function MintConsole() {
   const [mockUsdBalance, setMockUsdBalance] = useState(ZERO);
   const [isMinting, setIsMinting] = useState(false);
   const [status, setStatus] = useState('IDLE');
-  const [feedback, setFeedback] = useState('');
+  const [executionError, setExecutionError] = useState('');
   const [txHash, setTxHash] = useState('');
+  const [userTier, setUserTier] = useState(-1);
+  const [ownedTokenId, setOwnedTokenId] = useState(0);
+  const [account, setAccount] = useState('');
+
+  const { execute, loading: sdkLoading, step: sdkStep } = useUGF();
 
   const activeTier = useMemo(() => TIERS.find((tier) => tier.id === selectedTier) || TIERS[2], [selectedTier]);
 
-  const fetchBalances = async (provider, address) => {
-    const [ethRaw, mockUsdContract] = await Promise.all([
-      provider.getBalance(address),
-      Promise.resolve(new ethers.Contract(TOKEN_ADDRESSES.MUSD, ERC20_ABI, provider)),
-    ]);
+  const fetchBalances = async (provider, addr) => {
+    try {
+      const [ethRaw, mockUsdContract, saasContract] = await Promise.all([
+        provider.getBalance(addr).catch(() => 0n),
+        Promise.resolve(new ethers.Contract(TOKEN_ADDRESSES.TYI, ERC20_ABI, provider)),
+        Promise.resolve(new ethers.Contract(CONTRACT_ADDRESSES.SPECTRA_SAAS, CONTRACT_ABIS.SPECTRA_SAAS, provider))
+      ]);
 
-    const decimals = await mockUsdContract.decimals();
-    const mockUsdRaw = await mockUsdContract.balanceOf(address);
+      let mockUsdRaw = 0n;
+      let decimals = 18;
+      try {
+        decimals = await mockUsdContract.decimals();
+        mockUsdRaw = await mockUsdContract.balanceOf(addr);
+      } catch (e) {
+        console.warn('[MintConsole] Failed to fetch TYI balance:', e);
+      }
+      
+      let tier = -1;
+      try {
+        tier = Number(await saasContract.getUserTier(addr));
+      } catch (e) {
+        console.warn('[MintConsole] Failed to fetch active tier:', e);
+      }
 
-    setEthBalance(Number(ethers.formatEther(ethRaw)).toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 4 }));
-    setMockUsdBalance(Number(ethers.formatUnits(mockUsdRaw, decimals)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+      let ownedTokenId = 0;
+      try {
+        const nftContract = new ethers.Contract(CONTRACT_ADDRESSES.SPECTRA_NFT, CONTRACT_ABIS.SPECTRA_NFT, provider);
+        ownedTokenId = Number(await nftContract.userTokenId(addr));
+      } catch (e) {
+        console.warn('[MintConsole] Failed to fetch userTokenId:', e);
+      }
+
+      setEthBalance(Number(ethers.formatEther(ethRaw)).toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 4 }));
+      setMockUsdBalance(Number(ethers.formatUnits(mockUsdRaw, decimals)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+      setUserTier(tier);
+      setOwnedTokenId(ownedTokenId);
+    } catch (err) {
+      console.warn('[MintConsole] fetchBalances encountered a critical error:', err);
+      setEthBalance(ZERO);
+      setMockUsdBalance(ZERO);
+      setUserTier(-1);
+      setOwnedTokenId(0);
+    }
+  };
+
+  const ensureBaseSepolia = async () => {
+    if (!window.ethereum) return;
+    try {
+      await window.ethereum.request({
+        method: 'wallet_switchEthereumChain',
+        params: [{ chainId: '0x14a34' }], // 84532 in hex
+      });
+    } catch (switchError) {
+      if (switchError.code === 4902) {
+        await window.ethereum.request({
+          method: 'wallet_addEthereumChain',
+          params: [{
+            chainId: '0x14a34',
+            chainName: 'Base Sepolia',
+            nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+            rpcUrls: ['https://sepolia.base.org'],
+            blockExplorerUrls: ['https://sepolia.basescan.org'],
+          }],
+        });
+      }
+    }
   };
 
   const connectWallet = async () => {
@@ -73,37 +137,55 @@ export default function MintConsole() {
       throw new Error('No injected wallet found.');
     }
 
+    await ensureBaseSepolia();
+
     const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
     if (!accounts?.length) {
       throw new Error('Wallet returned no accounts.');
     }
 
     const provider = new ethers.BrowserProvider(window.ethereum);
+    setAccount(accounts[0]);
     await fetchBalances(provider, accounts[0]);
     return { provider, account: accounts[0] };
   };
 
-  const approveIfNeeded = async (signer, spender, amountWei) => {
-    const token = new ethers.Contract(TOKEN_ADDRESSES.MUSD, ERC20_ABI, signer);
-    const owner = await signer.getAddress();
-    const allowance = await token.allowance(owner, spender);
-
-    if (allowance >= amountWei) {
-      return;
-    }
-
-    setStatus('APPROVING');
-    const approveTx = await token.approve(spender, ethers.MaxUint256);
-    await approveTx.wait();
-  };
+  useEffect(() => {
+    const hydrate = async () => {
+      if (!window.ethereum) return;
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const accounts = await provider.send('eth_accounts', []);
+      if (accounts?.length) {
+        setAccount(accounts[0]);
+        await fetchBalances(provider, accounts[0]);
+      }
+    };
+    hydrate().catch(e => console.warn('[MintConsole] Hydration failed:', e));
+    
+    if (!window.ethereum) return undefined;
+    
+    const handleAccountsChanged = (accounts) => {
+      if (!accounts?.length) {
+        setAccount('');
+        setEthBalance(ZERO);
+        setMockUsdBalance(ZERO);
+        setUserTier(-1);
+        setOwnedTokenId(0);
+      } else {
+        setAccount(accounts[0]);
+        hydrate().catch(e => console.warn('[MintConsole] Re-hydration failed:', e));
+      }
+    };
+    
+    window.ethereum.on('accountsChanged', handleAccountsChanged);
+    return () => window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
+  }, []);
 
   const handleMint = async () => {
-    if (isMinting) {
-      return;
-    }
+    if (isMinting || sdkLoading) return;
 
     setIsMinting(true);
-    setFeedback('');
+    setExecutionError('');
     setTxHash('');
 
     try {
@@ -113,45 +195,149 @@ export default function MintConsole() {
       }
 
       setStatus('CONNECTING');
-      const { provider, account } = await connectWallet();
+      const { provider } = await connectWallet();
       const signer = await provider.getSigner();
-      const feeAmount = ethers.parseUnits(String(tier.deduction), 18);
 
-      await approveIfNeeded(signer, CONTRACT_ADDRESSES.SPECTRA_SAAS, feeAmount);
+      // Step 1: Manual Approval for SaaS Contract (Subscription Fee)
+      setStatus('APPROVING_SAAS');
+      const token = new ethers.Contract(TOKEN_ADDRESSES.TYI, ERC20_ABI, signer);
+      const decimals = await token.decimals();
+      const feeAmount = ethers.parseUnits(String(tier.deduction), decimals);
+      
+      const allowance = await token.allowance(account, CONTRACT_ADDRESSES.SPECTRA_SAAS);
+      if (allowance < feeAmount) {
+        const tx = await token.approve(CONTRACT_ADDRESSES.SPECTRA_SAAS, ethers.MaxUint256);
+        await tx.wait(1);
+      }
 
+      // Step 2: Subscribe (Direct Tx)
       setStatus('SUBSCRIBING');
       const saas = new ethers.Contract(CONTRACT_ADDRESSES.SPECTRA_SAAS, CONTRACT_ABIS.SPECTRA_SAAS, signer);
       const subscribeTx = await saas.subscribe(tier.plan);
-      await subscribeTx.wait();
+      await subscribeTx.wait(1);
 
-      setStatus('MINTING');
-      const nft = new ethers.Contract(CONTRACT_ADDRESSES.SPECTRA_NFT, CONTRACT_ABIS.SPECTRA_NFT, signer);
-      const mintTx = await nft.mintSubscribedNFT(`ipfs://spectra-subscription-${tier.id}`);
-      await mintTx.wait();
+      // Step 3: Gasless Minting via UGF
+      let functionName = '';
+      if (tier.id === 'vector') functionName = 'mintVectorBadge';
+      else if (tier.id === 'nexus') functionName = 'mintNexusBadge';
 
-      setTxHash(mintTx.hash);
-      setStatus('MINTED');
-      await fetchBalances(provider, account);
-    } catch (mintError) {
-      if (mintError?.code === 4001) {
-        setFeedback('Transaction rejected by user.');
-      } else {
-        setFeedback(mintError?.shortMessage || mintError?.message || 'Mint request failed.');
+      const iface = new ethers.Interface(CONTRACT_ABIS.SPECTRA_NFT);
+      const data = iface.encodeFunctionData(functionName, []);
+
+      setStatus('MINTING_BADGE');
+      const result = await execute({
+        target: CONTRACT_ADDRESSES.SPECTRA_NFT,
+        data,
+        paymentToken: TOKEN_ADDRESSES.TYI,
+        signer
+      });
+
+      if (result && result.userTxHash) {
+        setTxHash(result.userTxHash);
+        setStatus('MINTED');
+        await fetchBalances(provider, account);
       }
+
+    } catch (err) {
+      console.error('[MintConsole] Execution Error:', err);
+      setExecutionError(err.message);
       setStatus('ERROR');
-      setTxHash('');
     } finally {
       setIsMinting(false);
     }
   };
 
+  const handleCancelNFT = async () => {
+    if (activeTier.id === 'alpha') return;
+    if (isMinting || sdkLoading) return;
+    if (!window.confirm('Are you sure you want to cancel the NFT? This will remove the benefits too.')) {
+      return;
+    }
+
+    setIsMinting(true);
+    setExecutionError('');
+    setTxHash('');
+    setStatus('CANCELLING');
+
+    try {
+      const { provider } = await connectWallet();
+      const signer = await provider.getSigner();
+
+      // Step 1: Cancel subscription on SaaS Contract
+      setStatus('CANCELLING_SAAS');
+      const saas = new ethers.Contract(CONTRACT_ADDRESSES.SPECTRA_SAAS, CONTRACT_ABIS.SPECTRA_SAAS, signer);
+      const cancelTx = await saas.cancelSubscription();
+      await cancelTx.wait(1);
+
+      // Step 2: Burn NFT on NFT Contract
+      if (ownedTokenId > 0) {
+        setStatus('BURNING_NFT');
+        const nft = new ethers.Contract(CONTRACT_ADDRESSES.SPECTRA_NFT, CONTRACT_ABIS.SPECTRA_NFT, signer);
+        const burnTx = await nft.burn(ownedTokenId);
+        await burnTx.wait(1);
+      }
+
+      setStatus('CANCELLED');
+      await fetchBalances(provider, account);
+    } catch (err) {
+      console.error('[MintConsole] Cancellation Error:', err);
+      setExecutionError(err.message);
+      setStatus('ERROR');
+    } finally {
+      setIsMinting(false);
+    }
+  };
+
+  const renderStatusIndicator = () => {
+    const isSdkActive = ['AUTHENTICATING', 'CHECKING_ALLOWANCE', 'APPROVING_FORWARDER', 'SUBMITTING_PAYMENT', 'EXECUTING_ON_CHAIN'].includes(sdkStep);
+    
+    if (isMinting || isSdkActive) {
+      return (
+        <div className="spectra-agent-loader-row" style={{ marginTop: '12px' }}>
+          <div className="spectra-agent-geometric-spinner" />
+          <span className="spectra-agent-loader-text">
+            {status === 'CONNECTING' && 'Establishing Secure Connection...'}
+            {status === 'APPROVING_SAAS' && 'Approving Subscription Fee...'}
+            {status === 'SUBSCRIBING' && 'Confirming Plan Selection...'}
+            {status === 'MINTING_BADGE' && (isSdkActive ? `UGF Pipeline: ${sdkStep}` : 'Preparing Gasless Mint...')}
+            {status === 'CANCELLING' && 'Initializing Cancellation...'}
+            {status === 'CANCELLING_SAAS' && 'Cancelling SaaS Plan...'}
+            {status === 'BURNING_NFT' && 'Burning Subscription Badge NFT...'}
+          </span>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  const isBadgeOwned = activeTier.plan <= userTier;
+  const badgeStyle = {
+    filter: isBadgeOwned ? 'none' : 'grayscale(100%) opacity(50%)',
+    transition: 'all 0.3s ease'
+  };
+
   return (
     <div className="spectra-mint-grid">
       <div className="spectra-mint-left">
-        <div className="spectra-render-box">
-          <div className="spectra-render-label">[ RENDER VIEW ]</div>
-          <div className="spectra-status-badge">{status}</div>
-          <img className="spectra-badge-image" src={activeTier.badge} alt={`${activeTier.name} badge`} />
+        <div className="spectra-render-box" style={{ position: 'relative' }}>
+          {/* <div className="spectra-render-label">[ RENDER VIEW ]</div>
+          <div className="spectra-status-badge">{status}</div> */}
+
+          {activeTier.spline ? (
+            <div className='nftdiv' style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <video 
+              className='nftvideo'
+                src={activeTier.spline} 
+                autoPlay 
+                loop 
+                muted 
+                playsInline 
+                style={{ width: '100%', height: '100%', objectFit: 'cover', ...badgeStyle }}
+              />
+            </div>
+          ) : (
+            <img className="spectra-badge-image" style={badgeStyle} src={activeTier.badge} alt={`${activeTier.name} badge`} />
+          )}
         </div>
 
         <div className="spectra-action-box">
@@ -159,16 +345,63 @@ export default function MintConsole() {
             <span className="spectra-action-label">Estimated Deduction</span>
             <span className="spectra-action-value">{activeTier.deduction} UGF/MO</span>
           </div>
-          <button className="spectra-mint-btn" type="button" onClick={handleMint} disabled={isMinting}>
-            {isMinting ? 'Awaiting Wallet Confirmation...' : 'Mint Subscription Badge'}
+
+          {executionError && (
+            <div className="spectra-error-alert" style={{
+              background: 'rgba(255, 0, 0, 0.1)',
+              border: '1px solid rgba(255, 0, 0, 0.3)',
+              color: '#ff4d4d',
+              padding: '12px',
+              borderRadius: '4px',
+              marginBottom: '12px',
+              fontSize: '0.85rem',
+              fontFamily: 'Geist Mono'
+            }}>
+              <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>[ PIPELINE_FAILURE ]</div>
+              {executionError}
+            </div>
+          )}
+
+          <button className="spectra-mint-btn" type="button" onClick={handleMint} disabled={isMinting || isBadgeOwned || sdkLoading}>
+            {isMinting || sdkLoading ? 'PIPELINE_ACTIVE...' : isBadgeOwned ? 'BADGE_ALREADY_OWNED' : 'MINT_SUBSCRIPTION_BADGE'}
           </button>
-          <div className="spectra-mint-status">{status === 'MINTED' ? 'SUCCESS: TRANSACTION CONFIRMED' : `STATUS: ${status}`}</div>
+
+          {isBadgeOwned && activeTier.id !== 'alpha' && (
+            <button 
+              className="spectra-mint-btn" 
+              type="button" 
+              onClick={handleCancelNFT}
+              disabled={isMinting || sdkLoading}
+              style={{
+                marginTop: '12px',
+                background: 'rgba(239, 68, 68, 0.15)',
+                border: '1px solid rgba(239, 68, 68, 0.3)',
+                color: '#fca5a5',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(239, 68, 68, 0.3)';
+                e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.5)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(239, 68, 68, 0.15)';
+                e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.3)';
+              }}
+            >
+              {isMinting ? 'CANCELLING...' : 'CANCEL SUBSCRIPTION & BURN NFT'}
+            </button>
+          )}
+          
+          {renderStatusIndicator()}
+
+          {status !== 'IDLE' && (
+            <div className="spectra-mint-status">{status === 'MINTED' ? 'SUCCESS: TRANSACTION CONFIRMED' : `STATUS: ${status}`}</div>
+          )}
+
           <div className="spectra-balance-stack">
             <span className="spectra-balance-text">Base Sepolia ETH: {ethBalance}</span>
-            <span className="spectra-balance-text">Mock USD: {mockUsdBalance}</span>
+            <span className="spectra-balance-text">TYI Wallet Balance: {mockUsdBalance}</span>
           </div>
           {txHash && <div className="spectra-tx-panel">Mint confirmed: {txHash}</div>}
-          {feedback && <div className="spectra-error-box">{feedback}</div>}
         </div>
       </div>
 
@@ -180,7 +413,7 @@ export default function MintConsole() {
             return (
               <div
                 key={tier.id}
-                className={`spectra-tier-card ${isActive ? 'spectra-tier-card-active' : ''}`}
+                className={`spectra-tier-card scroll-dribble-card ${isActive ? 'spectra-tier-card-active' : ''}`}
                 onClick={() => setSelectedTier(tier.id)}
                 role="button"
                 tabIndex={0}

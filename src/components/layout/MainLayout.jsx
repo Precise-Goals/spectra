@@ -20,6 +20,7 @@ const PageContent = styled.main`
 export default function MainLayout({ children }) {
   return (
     <Shell>
+      <div className="scroll-progress-bar" />
       <FluidNav />
       <PageContent>{children}</PageContent>
       <Footer />

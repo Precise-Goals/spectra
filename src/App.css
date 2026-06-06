@@ -194,3 +194,11 @@ main.spectra-exchange-page {
 .spectra-exchange-header {
   text-align: center;
 }
+div#hero-spline {
+  border-radius: 10rem;
+  overflow: hidden;
+}
+
+#hero-spline canvas {
+  scale: 1.45;
+}

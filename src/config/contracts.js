@@ -2,10 +2,10 @@
  * Deployed Contract Addresses on Base Sepolia
  */
 export const CONTRACT_ADDRESSES = {
-  MOCK_USD: '0x0d88090A68A9D4172ef9Ed6068723D61D05a8057',
-  SPECTRA_SAAS: '0x9DECC76e5f51CA5fA25d2A4f6d921Aa5aB88f529',
-  SPECTRA_NFT: '0x727010d091Be1aC1a9d6f7fF06127d607581d4d6',
-  SPECTRA_EXCHANGE: '0x99faFABBE6aCCF914Ef315e5bfC690F5814E9097',
+  TYI: '0x27dc1c167aef232bb1e21073304b526726a8727e',
+  SPECTRA_SAAS: '0xa58ce4bac06e8723bbf45f595f2c8dbc0e021100',
+  SPECTRA_NFT: '0x45935fa416e2fb9c08e784e4b816b29be4d031b3',
+  SPECTRA_EXCHANGE: '0x27aa3d225d062d669279920727a8a1a438f4cd68',
 };
 
 export const NETWORK_INFO = {
@@ -16,10 +16,78 @@ export const NETWORK_INFO = {
 };
 
 export const TOKEN_ADDRESSES = {
-  MUSD: '0x0d88090A68A9D4172ef9Ed6068723D61D05a8057',
-  USDC: '0xd9aAEc86B65D86f6A7B5a147f4f0E4A6fEAeA58d',
+  TYI: '0x27dc1c167aef232bb1e21073304b526726a8727e',
+  MUSD: '0x27dc1c167aef232bb1e21073304b526726a8727e',
+  USDC: '0x036cbd53842c5426634e7de0ee21189402dbf3de',
   WETH: '0x4200000000000000000000000000000000000006',
+  ETH: '0x4200000000000000000000000000000000000006', // WETH on Base Sepolia
   WBTC: '0x0000000000000000000000000000000000000000',
+};
+
+export const TOKEN_SYMBOL_TO_ADDRESS = {
+  TYI: TOKEN_ADDRESSES.TYI,
+  MUSD: TOKEN_ADDRESSES.TYI,
+  ETH: TOKEN_ADDRESSES.WETH,
+  SEPOLIA_ETH: TOKEN_ADDRESSES.WETH,
+  BASE_SEPOLIA_ETH: TOKEN_ADDRESSES.WETH,
+  USDC: TOKEN_ADDRESSES.USDC,
+  WBTC: TOKEN_ADDRESSES.WBTC,
+};
+
+export function resolveTokenAddress(symbol) {
+  return TOKEN_SYMBOL_TO_ADDRESS[String(symbol || '').toUpperCase()] || TOKEN_ADDRESSES.TYI;
+}
+
+export function resolveTokenLabel(symbol) {
+  const normalized = String(symbol || '').toUpperCase();
+
+  if (normalized === 'TYI' || normalized === 'MUSD') {
+    return 'TYI';
+  }
+
+  if (normalized === 'SEPOLIA_ETH' || normalized === 'BASE_SEPOLIA_ETH') {
+    return 'ETH';
+  }
+
+  return normalized || 'TYI';
+}
+
+export const ensureBaseSepolia = async () => {
+  if (!window.ethereum) return;
+  try {
+    await window.ethereum.request({
+      method: 'wallet_switchEthereumChain',
+      params: [{ chainId: '0x14a34' }], // 84532 in hex
+    });
+  } catch (switchError) {
+    // This error code indicates that the chain has not been added to MetaMask.
+    if (switchError.code === 4902 || switchError?.data?.originalError?.code === 4902) {
+      try {
+        await window.ethereum.request({
+          method: 'wallet_addEthereumChain',
+          params: [
+            {
+              chainId: '0x14a34',
+              chainName: 'Base Sepolia',
+              nativeCurrency: {
+                name: 'ETH',
+                symbol: 'ETH',
+                decimals: 18,
+              },
+              rpcUrls: ['https://base-sepolia-rpc.publicnode.com', 'https://sepolia.base.org'],
+              blockExplorerUrls: ['https://sepolia.basescan.org'],
+            },
+          ],
+        });
+      } catch (addError) {
+        console.error('Failed to add Base Sepolia network', addError);
+        throw addError;
+      }
+    } else {
+      console.error('Failed to switch to Base Sepolia network', switchError);
+      throw switchError;
+    }
+  }
 };
 
 export const CONTRACT_ABIS = {
@@ -38,9 +106,13 @@ export const CONTRACT_ABIS = {
     'function mintGenesisBadge() external',
     'function mintVectorBadge() external',
     'function mintNexusBadge() external',
+    'function userTransactionCount(address user) view returns (uint256)',
+    'function burn(uint256 tokenId) external',
+    'function userTokenId(address user) view returns (uint256)',
   ],
   SPECTRA_SAAS: [
     'function subscribe(uint8 _tier) external',
+    'function cancelSubscription() external',
     'function getUserTier(address _user) view returns (uint8)',
   ],
 };

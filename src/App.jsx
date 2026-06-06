@@ -9,6 +9,8 @@ const About    = lazy(() => import('./pages/About'));
 const Agent    = lazy(() => import('./pages/Agent'));
 const Exchange = lazy(() => import('./pages/Exchange'));
 const Mint     = lazy(() => import('./pages/Mint'));
+const Journal  = lazy(() => import('./pages/Journal'));
+const Admin    = lazy(() => import('./pages/Admin'));
 
 const LoaderWrap = styled.div`
   height: 100vh;
@@ -36,6 +38,8 @@ export default function App() {
           <Route path="/agent"    element={<Agent />}    />
           <Route path="/exchange" element={<Exchange />} />
           <Route path="/mint"     element={<Mint />}     />
+          <Route path="/journal"  element={<Journal />}  />
+          <Route path="/admin"    element={<Admin />}    />
         </Routes>
       </Suspense>
     </MainLayout>

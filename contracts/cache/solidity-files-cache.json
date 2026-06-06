@@ -2,8 +2,8 @@
   "_format": "hh-sol-cache-2",
   "files": {
     "D:\\Workspace\\Projects\\spectra\\contracts\\src\\SpectraExchange.sol": {
-      "lastModificationDate": 1779388512435,
-      "contentHash": "fe1a75c2d4d4beafce8ca567e2e5e8bb",
+      "lastModificationDate": 1780738878839,
+      "contentHash": "21b1b5812a3d3aeff17ae2b90e9958da",
       "sourceName": "src/SpectraExchange.sol",
       "solcConfig": {
         "version": "0.8.24",
@@ -153,8 +153,8 @@
       ]
     },
     "D:\\Workspace\\Projects\\spectra\\contracts\\src\\SpectraSaaS.sol": {
-      "lastModificationDate": 1779388354246,
-      "contentHash": "3aac5fa6fff784632e46184e89674bd4",
+      "lastModificationDate": 1780740482681,
+      "contentHash": "de3df0d15a896b6683a579672afab783",
       "sourceName": "src/SpectraSaaS.sol",
       "solcConfig": {
         "version": "0.8.24",
@@ -880,8 +880,8 @@
       ]
     },
     "D:\\Workspace\\Projects\\spectra\\contracts\\src\\SpectraNFT.sol": {
-      "lastModificationDate": 1779433863296,
-      "contentHash": "afb2f80626f733e4e3de9e912842e40b",
+      "lastModificationDate": 1780743413434,
+      "contentHash": "8e65f3ebe106e14fd6d64bc6cb0d84c1",
       "sourceName": "src/SpectraNFT.sol",
       "solcConfig": {
         "version": "0.8.24",

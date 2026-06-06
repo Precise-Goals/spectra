@@ -234,7 +234,7 @@ export default function MissionStatement() {
             </CodeBlock>
           </GlassCard>
 
-          {/* Mock USD */}
+          {/* TYI */}
           <GlassCard
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -242,11 +242,11 @@ export default function MissionStatement() {
             transition={{ type: 'spring', damping: 25, stiffness: 80, delay: 0.1 }}
           >
             <CardHeader>
-              <CardTitle>Mock USD Integration</CardTitle>
+              <CardTitle>TYI Integration</CardTitle>
               <CardBadge>Sandbox Environment</CardBadge>
             </CardHeader>
             <CardBody>
-              Prior to live deployment, all agentic strategies undergo rigorous stress testing utilizing Mock USD within our proprietary sandbox. This isolates financial risk, allowing users to validate logic, monitor slippage parameters, and assess UGF impact before committing actual capital to the active protocol state.
+              Prior to live deployment, all agentic strategies undergo rigorous stress testing utilizing TYI within our proprietary sandbox. This isolates financial risk, allowing users to validate logic, monitor slippage parameters, and assess UGF impact before committing actual capital to the active protocol state.
             </CardBody>
             <CheckList>
               {[

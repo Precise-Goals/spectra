@@ -15,6 +15,9 @@ contract SpectraExchange is Ownable, ReentrancyGuard {
     SpectraSaaS public saasContract;
     IERC20 public mockUSD;
 
+    // Base Sepolia WETH address often used as placeholder for native ETH swaps in dApps
+    address public constant WETH = 0x4200000000000000000000000000000000000006;
+
     event SwapExecuted(
         address indexed user,
         address tokenIn,
@@ -30,7 +33,7 @@ contract SpectraExchange is Ownable, ReentrancyGuard {
     modifier enforceQuota(address _user) {
         saasContract.recordTransaction(_user);
         _;
-        emit QuotaVerified(_user, 0); // Count is emitted by SaaS contract event
+        emit QuotaVerified(_user, 0); 
     }
 
     constructor(address _saasContract, address _mockUSD) Ownable(msg.sender) {
@@ -39,17 +42,34 @@ contract SpectraExchange is Ownable, ReentrancyGuard {
     }
 
     /**
+     * @dev Fallback to receive ETH liquidity.
+     */
+    receive() external payable {}
+
+    /**
      * @dev Calculates a trade quote. 
-     * In production, this would interface with Base Sepolia liquidity pools (e.g., Uniswap V3).
      */
     function getQuote(
         address tokenIn,
         address tokenOut,
         uint256 amountIn
-    ) external view returns (uint256 amountOut) {
-        // Placeholder logic: 1:1 swap for mock tokens
-        // Real implementation would use an Oracle or Pool quoter
-        return amountIn;
+    ) public view returns (uint256 amountOut) {
+        // ETH/WETH price = $3500.00
+        // TYI & USDC price = $1.00 (6 decimals)
+        address usdc = 0x036cbd53842C5426634E7DE0Ee21189402Dbf3De;
+        
+        if (tokenIn == address(mockUSD) && tokenOut == WETH) {
+            return (amountIn * 10**12) / 3500;
+        } else if (tokenIn == WETH && tokenOut == address(mockUSD)) {
+            return (amountIn * 3500) / 10**12;
+        } else if (tokenIn == usdc && tokenOut == WETH) {
+            return (amountIn * 10**12) / 3500;
+        } else if (tokenIn == WETH && tokenOut == usdc) {
+            return (amountIn * 3500) / 10**12;
+        } else {
+            // Default 1:1 for similar decimal stablecoins
+            return amountIn;
+        }
     }
 
     /**
@@ -65,15 +85,23 @@ contract SpectraExchange is Ownable, ReentrancyGuard {
         require(amountIn > 0, "Amount must be greater than 0");
         
         // 1. Transfer In (User must have approved this contract)
-        require(IERC20(tokenIn).transferFrom(msg.sender, address(this), amountIn), "TransferIn failed");
+        require(IERC20(tokenIn).transferFrom(msg.sender, address(this), amountIn), "Spectra: TransferIn failed");
 
-        // 2. Perform Swap Logic (Placeholder)
-        uint256 amountOut = amountIn; // Mock 1:1
-        require(amountOut >= minAmountOut, "Slippage too high");
+        // 2. Perform Swap Logic
+        uint256 amountOut = getQuote(tokenIn, tokenOut, amountIn); 
+        require(amountOut >= minAmountOut, "Spectra: Slippage too high");
 
         // 3. Transfer Out
-        // In a real scenario, this would involve router.exactInputSingle(...)
-        // require(IERC20(tokenOut).transfer(msg.sender, amountOut), "TransferOut failed");
+        if (tokenOut == WETH) {
+            // Treat WETH request as native ETH for this hackathon context
+            require(address(this).balance >= amountOut, "Spectra: Insufficient ETH liquidity");
+            (bool success, ) = msg.sender.call{value: amountOut}("");
+            require(success, "Spectra: ETH TransferOut failed");
+        } else {
+            // Normal ERC20 transfer
+            require(IERC20(tokenOut).balanceOf(address(this)) >= amountOut, "Spectra: Insufficient token liquidity");
+            require(IERC20(tokenOut).transfer(msg.sender, amountOut), "Spectra: Token TransferOut failed");
+        }
 
         emit SwapExecuted(msg.sender, tokenIn, tokenOut, amountIn, amountOut);
     }
@@ -97,5 +125,13 @@ contract SpectraExchange is Ownable, ReentrancyGuard {
      */
     function withdrawToken(address token, uint256 amount) external onlyOwner {
         IERC20(token).transfer(owner(), amount);
+    }
+
+    /**
+     * @dev Emergency withdrawal for ETH.
+     */
+    function withdrawETH(uint256 amount) external onlyOwner {
+        (bool success, ) = owner().call{value: amount}("");
+        require(success, "Withdraw failed");
     }
 }

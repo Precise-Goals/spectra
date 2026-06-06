@@ -2,6 +2,8 @@ import React, { useEffect, useRef } from 'react';
 import styled, { keyframes } from 'styled-components';
 import { Link, useNavigate } from 'react-router-dom';
 import '../../styles/final.css'
+import { Spline } from 'lucide-react';
+import { HeroDesign } from './HeroDesign';
 /* ─── Styled ─────────────────────────────────────────────────────────────────── */
 
 const Page = styled.div`
@@ -560,7 +562,7 @@ export default function CinematicHero() {
           <span className="material-symbols-outlined" style={{ fontSize: 14 }}>south</span>
         </ScrollIndicator>
       </HeroSection>
-
+        <HeroDesign/>
       {/* Infrastructure */}
       <Section className="bg-grid">
         <SectionHeader className="reveal-item">

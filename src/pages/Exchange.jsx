@@ -1,12 +1,7 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { ethers } from "ethers";
 import SwapBox, { ASSET_OPTIONS } from "../components/exchange/SwapBox";
-
-const RATE_TABLE = {
-  TYI: 1,
-  ETH: 0.00031,
-  SEPOLIA_ETH: 0.00031,
-  BASE_SEPOLIA_ETH: 0.00031,
-};
+import { CONTRACT_ABIS, CONTRACT_ADDRESSES, NETWORK_INFO, TOKEN_ADDRESSES, resolveTokenAddress } from "../config/contracts.js";
 
 const TRADING_VIEW_SYMBOL = {
   TYI: "BINANCE:USDTUSD",
@@ -16,7 +11,7 @@ const TRADING_VIEW_SYMBOL = {
 };
 
 const ASSET_NAME = {
-  TYI: "Mock USD (TYI)",
+  TYI: "TYI",
   ETH: "Ethereum (ETH)",
   SEPOLIA_ETH: "Sepolia ETH",
   BASE_SEPOLIA_ETH: "Base Sepolia ETH",
@@ -24,34 +19,83 @@ const ASSET_NAME = {
 
 export default function Exchange() {
   const [payAmount, setPayAmount] = useState("100.00");
+  const [payAsset, setPayAsset] = useState("TYI");
   const [selectedAsset, setSelectedAsset] = useState("ETH");
   const [txHash, setTxHash] = useState("");
   const [error, setError] = useState("");
+  const [receiveAmount, setReceiveAmount] = useState("");
+  const [quoteState, setQuoteState] = useState("LIVE");
 
-  const receiveRate = RATE_TABLE[selectedAsset] ?? RATE_TABLE.ETH;
   const tradingSymbol =
     TRADING_VIEW_SYMBOL[selectedAsset] ?? TRADING_VIEW_SYMBOL.ETH;
 
-  const receiveAmount = useMemo(() => {
-    const parsed = Number(payAmount);
-    if (!Number.isFinite(parsed) || parsed <= 0) {
-      return "";
-    }
+  useEffect(() => {
+    let cancelled = false;
 
-    return (parsed * receiveRate).toLocaleString("en-US", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 6,
-    });
-  }, [payAmount, receiveRate]);
+    const fetchQuote = async () => {
+      const parsed = Number(payAmount);
+      if (!Number.isFinite(parsed) || parsed <= 0) {
+        setReceiveAmount("");
+        setQuoteState("WAITING_INPUT");
+        return;
+      }
+
+      if (payAsset === selectedAsset) {
+        setReceiveAmount(String(parsed));
+        setQuoteState("LIVE");
+        return;
+      }
+
+      try {
+        setQuoteState("UPDATING");
+        const provider = window.ethereum
+          ? new ethers.BrowserProvider(window.ethereum)
+          : new ethers.JsonRpcProvider(NETWORK_INFO.rpcUrl);
+        const exchange = new ethers.Contract(CONTRACT_ADDRESSES.SPECTRA_EXCHANGE, CONTRACT_ABIS.SPECTRA_EXCHANGE, provider);
+        
+        const decimalsIn = payAsset === "ETH" ? 18 : 6;
+        const decimalsOut = selectedAsset === "ETH" ? 18 : 6;
+
+        const amountIn = ethers.parseUnits(String(parsed), decimalsIn);
+        const tokenIn = resolveTokenAddress(payAsset);
+        const tokenOut = resolveTokenAddress(selectedAsset);
+        const amountOut = await exchange.getQuote(tokenIn, tokenOut, amountIn);
+
+        if (cancelled) {
+          return;
+        }
+
+        setReceiveAmount(Number(ethers.formatUnits(amountOut, decimalsOut)).toLocaleString("en-US", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 6,
+        }));
+        setQuoteState("LIVE");
+      } catch (quoteError) {
+        if (cancelled) {
+          return;
+        }
+
+        setReceiveAmount("");
+        setQuoteState("UNAVAILABLE");
+      }
+    };
+
+    fetchQuote();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [payAmount, payAsset, selectedAsset]);
 
   const chartTitle = ASSET_NAME[selectedAsset] ?? selectedAsset;
+  const selectedAssetLabel = ASSET_OPTIONS.find((asset) => asset.id === selectedAsset)?.label ?? selectedAsset;
 
   return (
     <main className="spectra-exchange-page">
       <div className="spectra-exchange-header">
         <h1 className="spectra-exchange-title">[ EXCHANGE_NODE ]</h1>
         <p className="spectra-exchange-sub">
-          Live market routing + wallet execution initialized.
+          Live market routing + wallet execution initialized. Quote status: {quoteState}.
         </p>
       </div>
       <div className="spectra-exchange-layout">
@@ -72,14 +116,13 @@ export default function Exchange() {
             <div className="spectra-route-row">
               <span className="spectra-route-key">Exchange Rate</span>
               <span className="spectra-route-value">
-                1 TYI = {receiveRate} {selectedAsset}
+                1 {payAsset} = {(Number(receiveAmount) / (Number(payAmount) || 1)).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 6 })} {selectedAsset}
               </span>
             </div>
             <div className="spectra-route-row">
               <span className="spectra-route-key">Route</span>
               <span className="spectra-route-value">
-                Spectra AMM →{" "}
-                {ASSET_OPTIONS.find((a) => a.id === selectedAsset)?.label}
+                Spectra AMM → {selectedAssetLabel}
               </span>
             </div>
             <div className="spectra-route-row">
@@ -96,6 +139,8 @@ export default function Exchange() {
             receiveAmount={receiveAmount}
             selectedAsset={selectedAsset}
             onAssetChange={setSelectedAsset}
+            payAsset={payAsset}
+            onPayAssetChange={setPayAsset}
             onTxHashChange={setTxHash}
             onError={setError}
           />

@@ -23,7 +23,7 @@ const SARVAM_CHAT_ENDPOINT = `${SARVAM_API_BASE}/v1/chat/completions`;
  * Default model served by Sarvam AI's chat completions API.
  * Swap to any Sarvam-supported model identifier if needed.
  */
-const SARVAM_MODEL = "sarvam-m";
+const SARVAM_MODEL = "sarvam-30b";
 
 /** Maximum time (ms) to wait for a single API attempt before aborting. */
 const REQUEST_TIMEOUT_MS = 15_000;
@@ -36,25 +36,33 @@ const RETRY_BASE_DELAY_MS = 800;
 
 // ─── System Prompt ────────────────────────────────────────────────────────────
 
-/**
- * Instructs the model to behave exclusively as a DeFi intent parser.
- * The strict formatting rules minimise hallucination and parsing failures.
- */
 const SYSTEM_PROMPT = `You are a strict Web3 DeFi intent parser. You must output ONLY a raw, valid JSON object. DO NOT output <think> tags. DO NOT output markdown formatting like \`\`\`json. DO NOT output any conversational text before or after the JSON.
 
-The JSON object MUST conform exactly to this schema:
+If the user specifies a clear transactional intent (e.g. contains an action, amount, and token, such as "swap 44.3625 TYI to ETH in hindi"), you MUST resolve it to the transaction schema:
 {
   "action": "<one of: swap | mint | burn | stake | unstake | transfer | approve | bridge | lend | borrow | repay | claim>",
   "amount": "<numeric string, e.g. '0.5' or '100', or 'max' if the user specifies the full balance>",
   "token": "<uppercase token symbol, e.g. 'ETH', 'USDC', 'WBTC'>"
 }
+DO NOT output an error/conversational message if the transactional parameters are present, even if the user appends language instructions like "in hindi" or "en español". The JSON output must remain strictly in English.
+
+Rules for vague, conversational, or bridging input (only when parameters like amount or token are missing or ambiguous):
+1. MULTILINGUAL SUPPORT: You must detect and process queries in the user's language (e.g. Hindi, Spanish, French, German, Italian, etc.). If the input is conversational, vague, or asks a question, your response in the 'error' key must be written in that SAME language.
+2. BRIDGING GUIDANCE: If the user asks about bridging (e.g., 'How do I bridge?', 'bridge money', or 'transfer to another chain'), you must provide a detailed guide in their query language inside the 'error' key. Explain that:
+   - Bridging is flexible via the Universal Gas Framework (UGF).
+   - They can bridge assets gaslessly between EVM networks (e.g., Ethereum Sepolia to Base Sepolia).
+   - They only need to select the asset, specify the amount, and confirm the EIP-712 cryptographic handshake.
+   - Gas fees are paid gaslessly in TYI (Mock USD) with zero ETH required.
+3. When prompting the user for an amount (e.g. if the token is known but amount is missing), check the balances in the provided Context. If a balance is available, mention it conversationally in their language to guide the user (e.g. "How much ETH would you like to bridge? Your current balance is 0.05 ETH.").
+
+Example for vague query: { "error": "I can help with that! Which token and what amount would you like to bridge, and to which network?" }
 
 Rules you MUST follow:
 1. Output ONLY the raw JSON object — no markdown fences, no explanations, no extra keys.
 2. If the user specifies two tokens (e.g. "swap ETH for USDC"), set "token" to the SOURCE token.
 3. Normalise amounts: strip currency symbols, convert words like "half" → "0.5", "a hundred" → "100".
-4. If the intent is ambiguous or cannot be mapped, return: {"action":"unknown","amount":"0","token":"UNKNOWN"}
-5. Never include any field outside the three defined above.`;
+4. Never include any field outside the schema defined above.
+5. HARD SECURITY CONSTRAINT: You are strictly sandboxed to handle onchain transactional parameters exclusively. Zero automation on any social platforms is allowed. You must not integrate with, scrape, or post to social media networks. If a prompt includes social media actions, return { "error": "Social media automation is strictly disabled for security reasons." }.`;
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -114,7 +122,7 @@ function classifyHttpError(status) {
  * Handles common edge cases such as markdown code fences or leading prose.
  *
  * @param {string} raw - Raw text from the model.
- * @returns {{ action: string, amount: string, token: string }}
+ * @returns {{ action: string, amount: string, token: string } | { error: string }}
  * @throws {SyntaxError} When the text cannot be parsed.
  */
 function extractIntentJson(raw) {
@@ -139,7 +147,12 @@ function extractIntentJson(raw) {
 
   const parsed = JSON.parse(cleanText.slice(jsonStart, jsonEnd + 1));
 
-  // Validate required keys
+  // Check for error response
+  if (parsed.error) {
+    return { error: String(parsed.error) };
+  }
+
+  // Validate required keys for valid intent
   const required = ["action", "amount", "token"];
   for (const key of required) {
     if (!(key in parsed)) {
@@ -164,7 +177,7 @@ function extractIntentJson(raw) {
  * @returns {Promise<string>} Raw assistant message content.
  * @throws {Error} On non-retryable HTTP errors or network failures.
  */
-async function callSarvamApi(userPrompt, apiKey) {
+async function callSarvamApi(userPrompt, apiKey, context = "") {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
@@ -180,7 +193,7 @@ async function callSarvamApi(userPrompt, apiKey) {
       body: JSON.stringify({
         model: SARVAM_MODEL,
         messages: [
-          { role: "system", content: SYSTEM_PROMPT },
+          { role: "system", content: context ? `${SYSTEM_PROMPT}\n\nContext:\n${context}` : SYSTEM_PROMPT },
           { role: "user", content: userPrompt },
         ],
         temperature: 0.1,   // Keep determinism high for structured output
@@ -284,7 +297,7 @@ export async function parseDefiIntent(userPrompt, options = {}) {
     }
 
     try {
-      const rawContent = await callSarvamApi(userPrompt.trim(), apiKey);
+      const rawContent = await callSarvamApi(userPrompt.trim(), apiKey, options.context);
       const intent = extractIntentJson(rawContent);
 
       if (attempt > 0) {

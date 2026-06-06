@@ -80,10 +80,10 @@ const RouteDetail = styled.div`
 
 /**
  * @param {object} props
- * @param {string} props.exchangeRate  e.g. "1 MUSD = 0.00042 ETH"
+ * @param {string} props.exchangeRate  e.g. "1 TYI = 0.00042 ETH"
  * @param {string} props.slippage      e.g. "0.5%"
  */
-export default function RouteDetails({ exchangeRate = '1 MUSD = --', slippage = '0.5%' }) {
+export default function RouteDetails({ exchangeRate = '1 TYI = --', slippage = '0.5%' }) {
   const [routeOpen, setRouteOpen] = useState(false);
 
   return (
@@ -130,7 +130,7 @@ export default function RouteDetails({ exchangeRate = '1 MUSD = --', slippage = 
           >
             <RouteDetail>
               <Zap size={11} color="rgba(176,38,255,0.5)" />
-              Mock USD → Spectra Pool → Output Token
+              TYI → Spectra Pool → Output Token
             </RouteDetail>
             <RouteDetail>
               Price impact: {'<'} 0.01% · Protocol fee: 0.00%

@@ -7,12 +7,19 @@ async function main() {
 
   console.log("Deploying contracts with the account:", deployer.address);
 
-  // 1. Deploy Mock USD (ERC20)
-  const MockUSD = await hre.ethers.getContractFactory("MockUSD");
-  const mockUSD = await MockUSD.deploy();
-  await mockUSD.waitForDeployment();
-  const mockUSDAddress = await mockUSD.getAddress();
-  console.log("1. MockUSD deployed to:", mockUSDAddress);
+  // 1. Use existing Mock USD (ERC20) from env if available, otherwise deploy
+  let mockUSDAddress = process.env.MOCK_USD_ADDRESS;
+  if (mockUSDAddress) {
+    console.log("1. Using existing MockUSD from ENV:", mockUSDAddress);
+  } else {
+    const MockUSD = await hre.ethers.getContractFactory("MockUSD");
+    const mockUSD = await MockUSD.deploy();
+    await mockUSD.waitForDeployment();
+    mockUSDAddress = await mockUSD.getAddress();
+    console.log("1. MockUSD deployed to:", mockUSDAddress);
+  }
+
+  const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
   // 2. Deploy SpectraSaaS (passing Mock USD address)
   const SpectraSaaS = await hre.ethers.getContractFactory("SpectraSaaS");
@@ -21,12 +28,16 @@ async function main() {
   const spectraSaaSAddress = await spectraSaaS.getAddress();
   console.log("2. SpectraSaaS deployed to:", spectraSaaSAddress);
 
+  await sleep(3000);
+
   // 3. Deploy SpectraNFT (passing SpectraSaaS address)
   const SpectraNFT = await hre.ethers.getContractFactory("SpectraNFT");
   const spectraNFT = await SpectraNFT.deploy(spectraSaaSAddress);
   await spectraNFT.waitForDeployment();
   const spectraNFTAddress = await spectraNFT.getAddress();
   console.log("3. SpectraNFT deployed to:", spectraNFTAddress);
+
+  await sleep(3000);
 
   // 4. Deploy SpectraExchange (passing SpectraSaaS address)
   // Note: SpectraExchange also needs MockUSD address for swaps

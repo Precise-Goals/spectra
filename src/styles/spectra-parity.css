@@ -29,7 +29,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  font-family: 'Geist', monospace;
+  font-family: "Geist", monospace;
   font-size: 11px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -75,7 +75,7 @@
 }
 
 .spectra-agent-label {
-  font-family: 'Geist', monospace;
+  font-family: "Geist", monospace;
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -85,7 +85,7 @@
 .spectra-agent-bubble {
   border: 1px solid rgba(255, 255, 255, 0.2);
   padding: 14px 16px;
-  font-family: 'Geist', monospace;
+  font-family: "Geist", monospace;
   font-size: 14px;
   color: #ffffff;
   background: rgba(255, 255, 255, 0.01);
@@ -113,7 +113,7 @@
   color: #ffffff;
   background: rgba(176, 38, 255, 0.18);
   padding: 12px 18px;
-  font-family: 'Geist', monospace;
+  font-family: "Geist", monospace;
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.09em;
@@ -131,7 +131,7 @@
   background: rgba(239, 68, 68, 0.08);
   color: #fca5a5;
   padding: 12px;
-  font-family: 'Geist', monospace;
+  font-family: "Geist", monospace;
   font-size: 13px;
 }
 
@@ -149,7 +149,7 @@
   background: transparent;
   border: none;
   color: #ffffff;
-  font-family: 'Geist', monospace;
+  font-family: "Geist", monospace;
   font-size: 16px;
 }
 
@@ -159,7 +159,7 @@
 
 .spectra-agent-submit {
   color: #b026ff;
-  font-family: 'Geist', monospace;
+  font-family: "Geist", monospace;
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -227,14 +227,14 @@
 }
 
 .spectra-exchange-title {
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
   font-size: clamp(2.2rem, 5vw, 3rem);
   color: #ffffff;
   text-transform: uppercase;
 }
 
 .spectra-exchange-sub {
-  font-family: 'Geist', monospace;
+  font-family: "Geist", monospace;
   font-size: 12px;
   color: #e5e5e5;
 }
@@ -258,7 +258,7 @@
 
 .spectra-chart-label,
 .spectra-chart-symbol {
-  font-family: 'Geist', monospace;
+  font-family: "Geist", monospace;
   font-size: 12px;
   color: #ffffff;
   letter-spacing: 0.08em;
@@ -289,7 +289,7 @@
 }
 
 .spectra-swap-label {
-  font-family: 'Geist', monospace;
+  font-family: "Geist", monospace;
   font-size: 12px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -307,7 +307,7 @@
   width: 100%;
   border: none;
   background: transparent;
-  font-family: 'Geist', monospace;
+  font-family: "Geist", monospace;
   font-size: 32px;
   color: #ffffff;
 }
@@ -318,7 +318,7 @@
   background: rgba(10, 10, 11, 0.9);
   color: #ffffff;
   padding: 9px 11px;
-  font-family: 'Geist', monospace;
+  font-family: "Geist", monospace;
   font-size: 12px;
 }
 
@@ -333,7 +333,7 @@
   color: #ffffff;
   background: rgba(176, 38, 255, 0.2);
   padding: 8px 12px;
-  font-family: 'Geist', monospace;
+  font-family: "Geist", monospace;
   font-size: 12px;
 }
 
@@ -346,7 +346,7 @@
   background: transparent;
   color: #ffffff;
   padding: 8px 12px;
-  font-family: 'Geist', monospace;
+  font-family: "Geist", monospace;
   font-size: 12px;
   text-transform: uppercase;
   display: inline-flex;
@@ -365,7 +365,7 @@
   justify-content: space-between;
   align-items: center;
   gap: 12px;
-  font-family: 'Geist', monospace;
+  font-family: "Geist", monospace;
   font-size: 12px;
   color: #e5e5e5;
 }
@@ -377,7 +377,7 @@
 }
 
 .spectra-balance-text {
-  font-family: 'Geist', monospace;
+  font-family: "Geist", monospace;
   font-size: 12px;
   color: #e5e5e5;
 }
@@ -391,7 +391,7 @@
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(10, 10, 11, 0.75);
   color: #ffffff;
-  font-family: 'Geist', monospace;
+  font-family: "Geist", monospace;
   font-size: 12px;
   padding: 10px 12px;
 }
@@ -406,7 +406,7 @@
   background: rgba(176, 38, 255, 0.12);
   color: #ffffff;
   padding: 6px 10px;
-  font-family: 'Geist', monospace;
+  font-family: "Geist", monospace;
   font-size: 11px;
   text-transform: uppercase;
 }
@@ -445,14 +445,14 @@
 }
 
 .spectra-route-key {
-  font-family: 'Geist', monospace;
+  font-family: "Geist", monospace;
   font-size: 12px;
   text-transform: uppercase;
   color: #e5e5e5;
 }
 
 .spectra-route-value {
-  font-family: 'Geist', monospace;
+  font-family: "Geist", monospace;
   font-size: 13px;
   color: #ffffff;
 }
@@ -468,7 +468,7 @@
   background: rgba(176, 38, 255, 0.16);
   color: #ffffff;
   padding: 16px;
-  font-family: 'Geist', monospace;
+  font-family: "Geist", monospace;
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -484,7 +484,7 @@
   background: rgba(16, 185, 129, 0.08);
   color: #d1fae5;
   padding: 12px;
-  font-family: 'Geist', monospace;
+  font-family: "Geist", monospace;
   font-size: 12px;
   word-break: break-all;
 }
@@ -523,14 +523,14 @@
 }
 
 .spectra-mint-page-title {
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
   font-size: clamp(2rem, 5vw, 3rem);
   color: #ffffff;
   text-transform: uppercase;
 }
 
 .spectra-mint-page-sub {
-  font-family: 'Geist', monospace;
+  font-family: "Geist", monospace;
   font-size: 14px;
   color: #a1a1aa;
   max-width: 720px;
@@ -574,7 +574,7 @@
 .spectra-status-badge {
   position: absolute;
   top: 16px;
-  font-family: 'Geist', monospace;
+  font-family: "Geist", monospace;
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -607,14 +607,14 @@
 }
 
 .spectra-action-label {
-  font-family: 'Geist', monospace;
+  font-family: "Geist", monospace;
   font-size: 11px;
   color: #e5e5e5;
   text-transform: uppercase;
 }
 
 .spectra-action-value {
-  font-family: 'Geist', monospace;
+  font-family: "Geist", monospace;
   font-size: 14px;
   color: #ffffff;
 }
@@ -625,7 +625,7 @@
   background: rgba(176, 38, 255, 0.15);
   color: #ffffff;
   padding: 16px;
-  font-family: 'Geist', monospace;
+  font-family: "Geist", monospace;
   font-size: 12px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -633,7 +633,7 @@
 
 .spectra-mint-status {
   margin-top: 12px;
-  font-family: 'Geist', monospace;
+  font-family: "Geist", monospace;
   font-size: 13px;
   color: #e5e5e5;
   text-align: center;
@@ -642,7 +642,7 @@
 .spectra-tier-label {
   border-bottom: 1px solid rgba(255, 255, 255, 0.2);
   padding-bottom: 8px;
-  font-family: 'Geist', monospace;
+  font-family: "Geist", monospace;
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -680,13 +680,13 @@
 }
 
 .spectra-tier-name {
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
   font-size: 30px;
   color: #ffffff;
 }
 
 .spectra-tier-price {
-  font-family: 'Geist', monospace;
+  font-family: "Geist", monospace;
   font-size: 12px;
   color: #e5e5e5;
   border: 1px solid rgba(255, 255, 255, 0.3);
@@ -695,7 +695,7 @@
 }
 
 .spectra-tier-description {
-  font-family: 'Geist', monospace;
+  font-family: "Geist", monospace;
   font-size: 12px;
   color: #e5e5e5;
   line-height: 1.6;
@@ -706,7 +706,7 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-  font-family: 'Geist', monospace;
+  font-family: "Geist", monospace;
   font-size: 13px;
   color: #ffffff;
   flex: 1;
@@ -731,7 +731,7 @@
 .spectra-tier-foot {
   border-top: 1px solid rgba(255, 255, 255, 0.3);
   padding-top: 12px;
-  font-family: 'Geist', monospace;
+  font-family: "Geist", monospace;
   font-size: 11px;
   text-transform: uppercase;
   color: #a1a1aa;
@@ -746,7 +746,7 @@
   border: 1px solid rgba(239, 68, 68, 0.5);
   padding: 10px;
   color: #fca5a5;
-  font-family: 'Geist', monospace;
+  font-family: "Geist", monospace;
   font-size: 12px;
 }
 
@@ -754,11 +754,224 @@
   opacity: 0;
   transform: translateY(20px);
   visibility: hidden;
-  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.8s ease;
+  transition:
+    opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+    visibility 0.8s ease;
 }
 
 .reveal-item.is-visible {
   opacity: 1 !important;
   transform: translateY(0) !important;
   visibility: visible !important;
+}
+
+/* --- UGF Geometric Spinner & Approval Loader --- */
+
+@keyframes spectra-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes spectra-pulse-border {
+  0% {
+    border-color: rgba(176, 38, 255, 0.3);
+    border-top-color: #b026ff;
+  }
+  50% {
+    border-color: rgba(176, 38, 255, 0.6);
+    border-top-color: #d06aff;
+  }
+  100% {
+    border-color: rgba(176, 38, 255, 0.3);
+    border-top-color: #b026ff;
+  }
+}
+
+.spectra-geometric-spinner,
+.spectra-agent-geometric-spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid rgba(176, 38, 255, 0.3);
+  border-top: 3px solid #b026ff;
+  border-radius: 50%;
+  animation:
+    spectra-spin 0.85s linear infinite,
+    spectra-pulse-border 2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+.spectra-approval-loader,
+.spectra-agent-loader-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  margin: 8px 0;
+  background: rgba(176, 38, 255, 0.06);
+  border: 1px solid rgba(176, 38, 255, 0.2);
+  border-radius: 10px;
+}
+
+.spectra-approval-text,
+.spectra-agent-loader-text {
+  font-family: "Geist Mono", "Poppins", monospace;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  color: #b026ff;
+  text-transform: uppercase;
+}
+
+.spectra-approval-confirmed {
+  color: #34d399;
+}
+
+/* Error display — red text for UGF SDK errors */
+.spectra-error-box,
+.spectra-agent-error {
+  color: #ff4444;
+  font-family: "Geist Mono", "Poppins", monospace;
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  padding: 10px 16px;
+  margin-top: 8px;
+  background: rgba(255, 68, 68, 0.06);
+  border: 1px solid rgba(255, 68, 68, 0.2);
+  border-radius: 8px;
+  word-break: break-word;
+}
+
+/* --- Agent Terminal Redesign --- */
+
+.spectra-agent-layout {
+  display: flex;
+  width: 100%;
+  height: calc(100vh - 180px);
+  max-width: 1440px;
+  gap: 24px;
+  margin: 0 auto;
+}
+
+.spectra-agent-sidebar {
+  flex: 0 0 300px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+}
+
+.spectra-sidebar-title {
+  font-family: "Geist Mono", monospace;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 8px;
+}
+
+.spectra-history-item {
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  font-family: "Poppins", sans-serif;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.spectra-history-item:hover {
+  background: rgba(176, 38, 255, 0.1);
+  border-color: rgba(176, 38, 255, 0.3);
+}
+
+.spectra-agent-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  overflow: hidden;
+  position: relative;
+}
+
+.spectra-agent-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 16px 24px;
+  background: rgba(0, 0, 0, 0.2);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.spectra-pill {
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  font-family: "Geist Mono", monospace;
+  font-size: 0.75rem;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.2s;
+  backdrop-filter: blur(10px);
+}
+
+.spectra-pill:hover {
+  background: rgba(176, 38, 255, 0.15);
+  border-color: #b026ff;
+  box-shadow: 0 0 10px rgba(176, 38, 255, 0.2);
+}
+
+.spectra-agent-chat-area {
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.spectra-agent-input-container {
+  padding: 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(0, 0, 0, 0.4);
+}
+div#hero-spline {
+  border-radius: 10rem;
+  overflow: hidden;
+}
+
+#hero-spline canvas {
+  scale: 1.45;
+}
+.spectra-balance-stack {
+  margin: 3% 0;
+}
+video.nftvideo::after {
+  content: " ";
+  background: white;
+  height: 10px;
+  width: 10px;
+  position: relative;
+  display: block;
+}
+
+.spectra-render-box {
+  border-radius: 33rem;
+  overflow: hidden;
+}
+
+.nftdiv {
+  height: 100%;
 }

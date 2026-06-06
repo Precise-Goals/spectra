@@ -361,14 +361,14 @@ export default function About() {
               </TwoColGrid>
             </ContentBlock>
 
-            {/* Mock USD */}
+            {/* TYI */}
             <ContentBlock>
               <BlockHeader>
-                <BlockTitle>Mock USD Integration</BlockTitle>
+                <BlockTitle>TYI Integration</BlockTitle>
                 <BlockTag>[ SANDBOX ENVIRONMENT ]</BlockTag>
               </BlockHeader>
               <BodyText>
-                Prior to live deployment, all agentic strategies undergo rigorous stress testing utilizing Mock USD within our proprietary sandbox. This isolates financial risk, allowing users to validate logic, monitor slippage parameters, and assess UGF impact before committing actual capital to the active protocol state.
+                Prior to live deployment, all agentic strategies undergo rigorous stress testing utilizing TYI within our proprietary sandbox. This isolates financial risk, allowing users to validate logic, monitor slippage parameters, and assess UGF impact before committing actual capital to the active protocol state.
               </BodyText>
               <ActionButton>
                 <span>View Sandbox Docs</span>
