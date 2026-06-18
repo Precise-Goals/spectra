@@ -638,17 +638,4 @@ Get your Sarvam AI key at [sarvam.ai](https://sarvam.ai).
 
 ---
 
-## 👨‍💻 Team Abhimanyu
-
-| Name | Role |
-|------|------|
-| Akash Shelke | Lead Web3 & Smart Contract Engineer |
-| Sarthak Patil | Frontend Architecture & AI Integration |
-| Prathamesh Kolhe | UGF SDK Integration & Relayer Pipeline |
-| Gaurav Chaudhari | UI/UX Design & Component System |
-| Om Shete | Contract Deployment & Testing |
-| Utkarsh Vidwat | DevOps & Build Pipeline |
-
----
-
 *Developed for the Universal Gas Framework (UGF) Hackathon. Powered by [Tychi Labs](https://tychilabs.com).*
